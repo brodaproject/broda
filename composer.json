@@ -1,0 +1,31 @@
+{
+    "name": "brodaproject/broda",
+    "type": "library",
+    "description": "",
+    "require": {
+        "silex/silex": "dev-master",
+
+        "symfony/filesystem": "*",
+        "symfony/finder": "*",
+        "symfony/validator": "*",
+        "symfony/security": "*",
+        "symfony/serializer": "*",
+
+        "twig/twig": "~1.15",
+
+        "jms/serializer": "*",
+        "kriswallsmith/assetic": "~1",
+        "leafo/lessphp": "*",
+        "mrclay/minify": "*",
+
+        "imagine/imagine": "*",
+        "doctrine/orm": "~2",
+        "monolog/monolog": ">=1.0.0"
+    },
+    "autoload": {
+        "psr-0": { "Broda\\": "src/" }
+    },
+    "archive": {
+        "exclude": ["!vendor", "tests", "*phpunit.xml", ".travis.yml", "build.xml", "build.properties", "composer.phar"]
+    }
+}

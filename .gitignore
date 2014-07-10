@@ -1,0 +1,5 @@
+/nbproject/
+/bower_components/
+/vendor/
+/web/public/*
+composer.lock
