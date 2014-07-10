@@ -38,7 +38,10 @@ class RestResponseListener implements EventSubscriberInterface
 
         if ($response instanceof RestResponse) {
 
-            $format = $request->getRequestFormat();
+            //$format = $request->getRequestFormat();
+            $accepts = $request->getAcceptableContentTypes();
+            $format = $request->getFormat($accepts[0]);
+            
             $newResponse = new Response($this->rest->formatOutput($response->getData(), $format), 200, array(
                 "Content-Type" => $request->getMimeType($format))
             );

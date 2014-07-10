@@ -4,6 +4,7 @@ namespace Broda\Component\Rest\Provider;
 
 use Broda\Component\Rest\EventListener\RestResponseListener;
 use Broda\Component\Rest\Resource;
+use Broda\Component\Rest\ResourceManager;
 use Broda\Component\Rest\RestService;
 use Broda\Component\Rest\Serializer\Construction\NaturalObjectConstructor;
 use JMS\Serializer\SerializerBuilder;
@@ -27,6 +28,10 @@ class RestServiceProvider implements ServiceProviderInterface, EventListenerProv
         }
 
         $app['rest'] = function() use ($app) {
+            return new RestService($app['rest.serializer']);
+        };
+
+        $app['rest.rm'] = function() use ($app) {
             Resource::$defaultMethods = array(
                 'all' => $app['rest.methods.all'],
                 'post' => $app['rest.methods.post'],
@@ -36,7 +41,7 @@ class RestServiceProvider implements ServiceProviderInterface, EventListenerProv
                 'delete' => $app['rest.methods.delete'],
             );
 
-            return new RestService($app);
+            return new ResourceManager($app['controllers'], $app);
         };
 
         $app['rest.listener'] = function() use ($app) {

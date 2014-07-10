@@ -2,8 +2,6 @@
 
 namespace Broda\Component\Rest;
 
-use Silex\Application;
-
 /**
  *
  * @author Raphael Hardt <raphael.hardt@gmail.com>
@@ -13,13 +11,18 @@ class Resource
 
     /**
      *
-     * @var Application
+     * @var ResourceManager
      */
-    protected $app;
-    protected $path;
-    protected $idName;
-    protected $format = '';
-    protected $routes;
+    private $rm;
+
+    private $basePath;
+
+    private $idName;
+
+    private $format;
+
+    protected $routes = array();
+
     public static $defaultMethods = array(
         'all' => 'all',
         'post' => 'post',
@@ -29,27 +32,42 @@ class Resource
         'delete' => 'delete',
     );
 
-    public function __construct(Application $app, $path, $controller = null,
-            $idName = 'id')
+    public function __construct(ResourceManager $rm, $path, $controller = null)
     {
         $controller = $this->createServiceForController($controller);
 
-        $pathParts = explode('.', $path);
-        $path = array_shift($pathParts);
-        if (count($pathParts)) {
-            $this->format = '.'.reset($pathParts);
-        }
-
-        $this->app = $app;
-        $this->path = $path;
-        $this->idName = $idName;
-        $this->routes = array();
+        $this->rm = $rm;
+        $this->definePath($path);
 
         if (null !== $controller) {
             $defaultMethods = self::$defaultMethods;
 
             foreach ($defaultMethods as $routeName => $method) {
                 $this->match($routeName, sprintf('%s:%s', $controller, $method));
+            }
+        }
+    }
+
+    private function definePath($path)
+    {
+        $parts = explode('/', ltrim($path, '/'));
+
+        if (count($parts) !== 2) {
+            throw new \LogicException('Path must be in a format: /rest/{id}.format');
+        }
+
+        foreach ($parts as $urlSection) {
+            if ($urlSection[0] === '{') {
+                // idname
+                if (isset($this->idName)) {
+                    throw new \LogicException('You cannot set two "ids" in the same resource');
+                }
+                $this->idName = substr($urlSection, 1, -1);
+            } else {
+                // splits in url.format
+                list($urlName, $format) = explode('.', $urlSection, 2);
+                $this->basePath = '/'.$urlName;
+                $this->format = $format;
             }
         }
     }
@@ -82,7 +100,7 @@ class Resource
             throw new \InvalidArgumentException('The REST path '.$this->itemPath() . $path.' can not use '.$idName.' as \'id\'');
         }
 
-        return new Resource($this->app, $this->itemPath() . $path, $controller, $idName);
+        return new Resource($this->rm, $this->itemPath() . $path, $controller, $idName);
     }
 
     public function match($method, $controller)
@@ -90,7 +108,7 @@ class Resource
         if (isset($this->routes[$method])) {
             throw new \LogicException(sprintf('%s route is already set', $method));
         }
-        $this->routes[$method] = $this->app->match($this->path($method), $controller)->method($method === 'all' ? 'get' : $method);
+        $this->routes[$method] = $this->rm->match($this->path($method), $controller)->method($method === 'all' ? 'get' : $method);
         return $this;
     }
 
@@ -175,9 +193,10 @@ class Resource
 
             // cria um serviço temporario para a classe, já que o resource
             // só suporta controllers-serviços
-            $this->app[$ctrlServiceName] = $this->app->share(function () use ($controller) {
+            $container = $this->rm->getContainer();
+            $container[$ctrlServiceName] = function () use ($controller) {
                 return is_string($controller) ? new $controller : $controller;
-            });
+            };
 
             $controller = $ctrlServiceName;
         }
