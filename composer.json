@@ -3,7 +3,7 @@
     "type": "library",
     "description": "",
     "require": {
-        "silex/silex": "dev-master",
+        "silex/silex": "2.0.*@dev",
 
         "symfony/filesystem": "*",
         "symfony/finder": "*",
