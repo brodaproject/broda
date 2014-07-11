@@ -5,6 +5,7 @@
     "require": {
         "silex/silex": "2.0.*@dev",
 
+        "symfony/config": "*",
         "symfony/filesystem": "*",
         "symfony/finder": "*",
         "symfony/validator": "*",

@@ -2,6 +2,8 @@
 
 namespace Broda\Component\Rest;
 
+use Symfony\Component\Routing\Route;
+
 /**
  *
  * @author Raphael Hardt <raphael.hardt@gmail.com>
@@ -21,6 +23,10 @@ class Resource
 
     private $format;
 
+    /**
+     *
+     * @var Route[]
+     */
     protected $routes = array();
 
     public static $defaultMethods = array(
@@ -37,79 +43,72 @@ class Resource
         $controller = $this->createServiceForController($controller);
 
         $this->rm = $rm;
-        $this->definePath($path);
+        $this->constructPath($path);
 
         if (null !== $controller) {
             $defaultMethods = self::$defaultMethods;
 
             foreach ($defaultMethods as $routeName => $method) {
-                $this->match($routeName, sprintf('%s:%s', $controller, $method));
+                $this->rm->match($this, $routeName, sprintf('%s:%s', $controller, $method));
             }
         }
     }
 
-    private function definePath($path)
+    private function constructPath($path)
     {
-        $parts = explode('/', ltrim($path, '/'));
-
-        if (count($parts) !== 2) {
+        $matches = array();
+        if (!preg_match('#(.+?)/\{([^}]+)\}(\..+)?$#', ltrim($path, '/'), $matches)) {
             throw new \LogicException('Path must be in a format: /rest/{id}.format');
         }
 
-        foreach ($parts as $urlSection) {
-            if ($urlSection[0] === '{') {
-                // idname
-                if (isset($this->idName)) {
-                    throw new \LogicException('You cannot set two "ids" in the same resource');
-                }
-                $this->idName = substr($urlSection, 1, -1);
-            } else {
-                // splits in url.format
-                list($urlName, $format) = explode('.', $urlSection, 2);
-                $this->basePath = '/'.$urlName;
-                $this->format = $format;
-            }
+        $this->idName = $matches[2];
+        $this->basePath = '/'.$matches[1];
+        $this->format = $matches[3];
+    }
+
+    public function getPath($routeType)
+    {
+        if ($this->isItemPath($routeType)) {
+            return $this->getPathForSubresource() . $this->format;
+        } else {
+            return $this->basePath . $this->format;
         }
     }
 
-    protected function itemPath()
+    protected function getPathForSubresource()
     {
-        return sprintf('%s/{%s}%s', $this->path, $this->idName, $this->format);
+        return $this->basePath . '/{' . $this->idName . '}';
     }
 
-    public function path($method)
+    public function getName($routeType)
     {
-        switch (strtolower($method)) {
+        return str_replace('/', '_', $this->basePath . $this->format) . '_' . $routeType;
+    }
+
+    public function getMethods($routeType)
+    {
+        switch (strtolower($routeType)) {
             case 'get':
-            case 'put':
-            case 'patch':
-            case 'delete':
-                return $this->itemPath();
+            case 'all':
+                return array('GET');
             default:
-                return $this->path.$this->format;
+                // POST, DELETE, PUT, PATCH
+                return array(strtoupper($routeType));
         }
     }
 
-    public function subresource($path, $controller = null, $idName = null)
+    public function subresource($path, $controller = null)
     {
-        if (null === $idName) {
-            $idName = $this->idName . 'd';
-        }
-
-        if ($idName === $this->idName) {
-            throw new \InvalidArgumentException('The REST path '.$this->itemPath() . $path.' can not use '.$idName.' as \'id\'');
-        }
-
-        return new Resource($this->rm, $this->itemPath() . $path, $controller, $idName);
+        $path = '/'.ltrim($path, '/');
+        return $this->rm->resource($this->getPathForSubresource() . $path, $controller);
     }
 
-    public function match($method, $controller)
+    public function match($routeType, $controller)
     {
-        if (isset($this->routes[$method])) {
-            throw new \LogicException(sprintf('%s route is already set', $method));
+        if (isset($this->routes[$routeType])) {
+            throw new \LogicException(sprintf('%s route is already set for rest path %s', $routeType, $this->getPath($routeType)));
         }
-        $this->routes[$method] = $this->rm->match($this->path($method), $controller)->method($method === 'all' ? 'get' : $method);
-        return $this;
+        return $this->routes[$routeType] = $this->rm->match($this, $routeType, $controller);
     }
 
     public function all($controller)
@@ -142,48 +141,61 @@ class Resource
         return $this->match('delete', $controller);
     }
 
-    public function before($routeName, $closure)
+    public function before($closure)
     {
-        if (array_key_exists($routeName, $this->routes)) {
-            $this->routes[$routeName]->before($closure);
+        foreach ($this->routes as $route) {
+            if ($route instanceof \Silex\Route) {
+                // only works with Silex
+                $route->before($closure);
+            }
         }
-
         return $this;
     }
 
-    public function after($routeName, $closure)
+    public function after($closure)
     {
-        if (array_key_exists($routeName, $this->routes)) {
-            $this->routes[$routeName]->after($closure);
+        foreach ($this->routes as $route) {
+            if ($route instanceof \Silex\Route) {
+                // only works with Silex
+                $route->after($closure);
+            }
         }
-
         return $this;
     }
 
     public function assertId($constraint)
     {
-        $routesWithId = array('get', 'put', 'delete', 'patch');
-
-        foreach ($this->routes as $routeName => $route) {
-            if (in_array($routeName, $routesWithId)) {
-                $route->assert($this->idName, $constraint);
+        foreach ($this->routes as $routeType => $route) {
+            if ($this->isItemPath($routeType)) {
+                $route->setRequirement($this->idName, $constraint);
             }
         }
 
         return $this;
     }
 
-    public function convert($variable, $closure)
+    public function convert($variable, $callback)
     {
-        $routesWithId = array('get', 'put', 'delete', 'patch');
-
-        foreach ($this->routes as $routeName => $route) {
-            if (in_array($routeName, $routesWithId)) {
-                $route->convert($variable, $closure);
+        foreach ($this->routes as $routeType => $route) {
+            if ($route instanceof \Silex\Route && $this->isItemPath($routeType)) {
+                // only works with Silex
+                $route->convert($variable, $callback);
             }
         }
 
         return $this;
+    }
+
+    private function isItemPath($routeType)
+    {
+        switch (strtolower($routeType)) {
+            case 'get':
+            case 'put':
+            case 'patch':
+            case 'delete':
+                return true;
+        }
+        return false;
     }
 
     private function createServiceForController($controller)

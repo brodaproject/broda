@@ -2,12 +2,15 @@
 
 namespace Broda\Component\Rest;
 
+use Broda\Component\Rest\Filter\FilterInterface;
+use Broda\Component\Rest\Filter\Param\Column;
+use Broda\Component\Rest\Filter\Param\Ordering;
+use Broda\Component\Rest\Filter\Param\Searching;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\Common\Collections\Selectable;
 use JMS\Serializer\Serializer;
 use JMS\Serializer\SerializerBuilder;
-use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -45,7 +48,7 @@ class RestService
     /**
      * Creates a object from request data
      *
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @param Request $request
      * @param type $class
      * @return type
      */
@@ -70,48 +73,50 @@ class RestService
     }
 
     /**
-     * Get the criteria already prefiltered with params from a request
+     * Retorna o/um Criteria com os pósfiltros do FilterInterface.
      *
-     * @param \Symfony\Component\HttpFoundation\ParameterBag $request
-     * @param \Doctrine\Common\Collections\Criteria $criteria
-     * @return \Doctrine\Common\Collections\Criteria
+     * Útil para
+     *
+     * @param FilterInterface $filter
+     * @param Criteria $criteria
+     * @return Criteria
      */
-    public function getFilteringCriteria(ParameterBag $request, Criteria $criteria = null)
+    public function getFilteringCriteria(FilterInterface $filter, Criteria $criteria = null)
     {
         if (null === $criteria) $criteria = new Criteria();
         $criteriaExpr = $criteria->expr();
 
-        $columns = $request->get('columns', array());
-        $orders = $request->get('order', array());
-        $start = (int)$request->get('start');
-        $length = min(50, (int)$request->get('length', 30)); // max 50 lines per request
-
-        $_getColName = function ($colIndex) use ($columns) {
-            return $columns[$colIndex]['name'] ?: $colIndex;
-        };
+        $columns = $filter->getColumns();
+        $columnSearchs = $filter->getColumnSearchs();
+        $globalSearch = $filter->getGlobalSearch();
+        $orders = $filter->getOrderings();
+        $start = $filter->getFirstResult();
+        $length = $filter->getMaxResults(); // max 50 lines per request
 
         // defining search especific columns
         $searchExpr = null;
-        foreach ($columns as $col) {
-            if ($col['search']['value']) {
-                $search = $col['search']['value'];
-                $field = $col['name'];
+        foreach ($columnSearchs as $col) {
+            /* @var $col Searching */
+            $search = $col->getValue();
+            $field = $col->getColumnName();
 
-                if (!isset($searchExpr)) {
-                    $searchExpr = $criteriaExpr->contains($field, $search);
-                } else {
-                    $searchExpr = $criteriaExpr->andX($searchExpr, $criteriaExpr->contains($field, $search));
-                }
+            if (!isset($searchExpr)) {
+                $searchExpr = $criteriaExpr->contains($field, $search);
+            } else {
+                $searchExpr = $criteriaExpr->andX($searchExpr, $criteriaExpr->contains($field, $search));
             }
         }
 
         // defining search all
         $searchAllExpr = null;
-        if ($request->get('search[value]', null, true)) {
-            $search = $request->get('search[value]', '', true);
+        if (null !== $globalSearch) {
+            $search = $globalSearch->getValue();
 
             foreach ($columns as $col) {
-                $field = $col['name'];
+                /* @var $col Column */
+                $field = $col->getName();
+
+                if (!$col->getSearchable()) continue;
 
                 if (!isset($searchAllExpr)) {
                     $searchAllExpr = $criteriaExpr->contains($field, $search);
@@ -122,11 +127,13 @@ class RestService
         }
 
         // defining orderings
-        $i = count($orders);
         $orderings = array();
-        while ($i--) {
-            $field = $_getColName($orders[$i]['column']);
-            $dir = strtolower($orders[$i]['dir']) == 'desc' ? Criteria::DESC : Criteria::ASC;
+        foreach ($orders as $order) {
+            /* @var $order Ordering */
+            $field = $order->getColumn()->getName();
+            $dir = $order->getDir();
+
+            if (!$order->getColumn()->getOrderable()) continue;
 
             $orderings[$field] = $dir;
         }
@@ -144,12 +151,12 @@ class RestService
     /**
      * Filters a collection and return data filtered by request
      *
-     * @param ArrayCollection|array $collection
-     * @param \Symfony\Component\HttpFoundation\ParameterBag $request
+     * @param Selectable|array $collection
+     * @param FilterInterface $filter
      * @return type
      * @throws \UnexpectedValueException
      */
-    public function filter($collection, ParameterBag $request)
+    public function filter($collection, FilterInterface $filter)
     {
         if (is_array($collection)) {
             $collection = new ArrayCollection($collection);
@@ -159,12 +166,13 @@ class RestService
             throw new \UnexpectedValueException("RestService::filter() only supports arrays or Selectable objects");
         }
 
-        $criteria = $this->getFilteringCriteria($request);
+        $criteria = $this->getFilteringCriteria($filter);
 
         // do the matching
         $result = $collection->matching($criteria);
 
-        return $result;
+        // select the output method
+        return $filter->getOutputResponse($result);
     }
 
 }

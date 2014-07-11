@@ -4,6 +4,8 @@ namespace Broda\Component\Rest;
 
 use Pimple\Container;
 use Silex\ControllerCollection;
+use Symfony\Component\Routing\Route;
+use Symfony\Component\Routing\RouteCollection;
 
 /**
  * Classe ResourceManager
@@ -20,9 +22,9 @@ class ResourceManager
 
     /**
      *
-     * @var ControllerCollection
+     * @var RouteCollection|ControllerCollection
      */
-    private $controllers;
+    private $routeCollection;
 
     /**
      *
@@ -30,10 +32,13 @@ class ResourceManager
      */
     private $resources;
 
-    public function __construct(ControllerCollection $controllers, Container $container = null)
+    private $routeClass;
+
+    public function __construct($controllers, Container $container = null, $routeClass = 'Symfony\Component\Routing\Route')
     {
         $this->container = $container ?: new Container();
-        $this->controllers = $controllers;
+        $this->routeCollection = $controllers;
+        $this->routeClass = $routeClass;
         $this->resources = array();
     }
 
@@ -56,8 +61,28 @@ class ResourceManager
         return $this;
     }
 
-    public function getController()
+    public function match(Resource $resource, $routeType, $to)
     {
-        return $this->controllers;
+        if ($this->routeCollection instanceof ControllerCollection) {
+            // Silex style
+            $controller = $this->routeCollection->match($resource->getPath($routeType), $to)
+                    ->method(implode('|', $resource->getMethods($routeType)))
+                    ->bind($resource->getName($routeType));
+
+            return $controller->getRoute();
+
+        } else {
+            // Symfony standard style
+            $routeClass = $this->routeClass;
+            /* @var $route Route */
+            $route = new $routeClass();
+            $route->setPath($resource->getPath($routeType));
+            $route->setDefault('_controller', $to);
+            $route->setMethods($resource->getMethods($routeType));
+
+            $this->routeCollection->add($resource->getName($routeType), $route);
+
+            return $route;
+        }
     }
 }
