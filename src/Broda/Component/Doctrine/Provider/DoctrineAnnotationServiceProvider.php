@@ -35,7 +35,7 @@ class DoctrineAnnotationServiceProvider implements ServiceProviderInterface, Boo
 
     public function boot(Application $app)
     {
-        foreach ($app['annotation.loaders'] as $loader) {
+        foreach ((array)$app['annotation.loaders'] as $loader) {
             if (is_object($loader) && method_exists($loader, 'loadClass')) {
                 // support for composer/symfony's autoloader
                 AnnotationRegistry::registerLoader(array($loader, 'loadClass'));
@@ -52,7 +52,7 @@ class DoctrineAnnotationServiceProvider implements ServiceProviderInterface, Boo
             }
         }
 
-        foreach ($app['annotation.global_ignores_names'] as $annotation) {
+        foreach ((array)$app['annotation.global_ignores_names'] as $annotation) {
             AnnotationReader::addGlobalIgnoredName($annotation);
         }
 

@@ -43,7 +43,7 @@ class Resource
         $controller = $this->createServiceForController($controller);
 
         $this->rm = $rm;
-        $this->constructPath($path);
+        $this->constructPath(ltrim($path, '/'));
 
         if (null !== $controller) {
             $defaultMethods = self::$defaultMethods;
@@ -57,7 +57,7 @@ class Resource
     private function constructPath($path)
     {
         $matches = array();
-        if (!preg_match('#(.+?)/\{([^}]+)\}(\..+)?$#', ltrim($path, '/'), $matches)) {
+        if (!preg_match('#(.+?)/\{([^}]+)\}(\..+)?$#', $path, $matches)) {
             throw new \LogicException('Path must be in a format: /rest/{id}.format');
         }
 
