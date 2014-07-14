@@ -4,8 +4,10 @@ namespace Broda\Component\Rest\EventListener;
 
 use Broda\Component\Rest\RestResponse;
 use Broda\Component\Rest\RestService;
+use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Event\GetResponseEvent;
 use Symfony\Component\HttpKernel\Event\GetResponseForControllerResultEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 
@@ -21,9 +23,23 @@ class RestResponseListener implements EventSubscriberInterface
      */
     protected $rest;
 
-    public function __construct(RestService $rest)
+    /**
+     *
+     * @var LoaderInterface
+     */
+    protected $loader;
+
+    public function __construct(RestService $rest, LoaderInterface $loader = null)
     {
         $this->rest = $rest;
+        $this->loader = $loader;
+    }
+
+    public function onKernelRequest(GetResponseEvent $event)
+    {
+        if (null !== $this->loader) {
+            $this->loader->load('');
+        }
     }
 
     /**
@@ -38,10 +54,12 @@ class RestResponseListener implements EventSubscriberInterface
 
         if ($response instanceof RestResponse) {
 
-            //$format = $request->getRequestFormat();
-            $accepts = $request->getAcceptableContentTypes();
-            $format = $request->getFormat($accepts[0]);
-            
+            $format = $request->getRequestFormat(null);
+            if (null === $format) {
+                $accepts = $request->getAcceptableContentTypes();
+                $format = $request->getFormat($accepts[0]);
+            }
+
             $newResponse = new Response($this->rest->formatOutput($response->getData(), $format), 200, array(
                 "Content-Type" => $request->getMimeType($format))
             );
@@ -54,6 +72,7 @@ class RestResponseListener implements EventSubscriberInterface
     public static function getSubscribedEvents()
     {
         return array(
+            KernelEvents::REQUEST => array(array('onKernelRequest', 64)), // symfony is 32
             KernelEvents::VIEW => array('onKernelView', 60), // silex is -10
         );
     }

@@ -63,26 +63,15 @@ class ResourceManager
 
     public function match(Resource $resource, $routeType, $to)
     {
-        if ($this->routeCollection instanceof ControllerCollection) {
-            // Silex style
-            $controller = $this->routeCollection->match($resource->getPath($routeType), $to)
-                    ->method(implode('|', $resource->getMethods($routeType)))
-                    ->bind($resource->getName($routeType));
+        $routeClass = $this->routeClass;
+        /* @var $route Route */
+        $route = new $routeClass();
+        $route->setPath($resource->getPath($routeType));
+        $route->setDefault('_controller', $to);
+        $route->setMethods($resource->getMethods($routeType));
 
-            return $controller->getRoute();
+        $this->routeCollection->add($resource->getName($routeType), $route);
 
-        } else {
-            // Symfony standard style
-            $routeClass = $this->routeClass;
-            /* @var $route Route */
-            $route = new $routeClass();
-            $route->setPath($resource->getPath($routeType));
-            $route->setDefault('_controller', $to);
-            $route->setMethods($resource->getMethods($routeType));
-
-            $this->routeCollection->add($resource->getName($routeType), $route);
-
-            return $route;
-        }
+        return $route;
     }
 }

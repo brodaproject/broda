@@ -3,6 +3,8 @@
 namespace Broda\Component\Rest\Provider;
 
 use Broda\Component\Rest\EventListener\RestResponseListener;
+use Broda\Component\Rest\Loader\AnnotationClassLoader;
+use Broda\Component\Rest\Loader\AnnotationDirectoryLoader;
 use Broda\Component\Rest\Resource;
 use Broda\Component\Rest\ResourceManager;
 use Broda\Component\Rest\RestService;
@@ -12,6 +14,7 @@ use Pimple\Container;
 use Pimple\ServiceProviderInterface;
 use Silex\Api\EventListenerProviderInterface;
 use Silex\ServiceControllerResolver;
+use Symfony\Component\Config\FileLocator;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class RestServiceProvider implements ServiceProviderInterface, EventListenerProviderInterface
@@ -27,6 +30,13 @@ class RestServiceProvider implements ServiceProviderInterface, EventListenerProv
             $app['rest.methods.' . $method] = $method;
         }
 
+        $app['rest.annotation_loader'] = function () use ($app) {
+            return new AnnotationDirectoryLoader(
+                    new FileLocator($app['controllers_path']),
+                    new AnnotationClassLoader($app['annotation.reader'], $app['rest.rm'])
+            );
+        };
+
         $app['rest'] = function() use ($app) {
             return new RestService($app['rest.serializer']);
         };
@@ -41,11 +51,11 @@ class RestServiceProvider implements ServiceProviderInterface, EventListenerProv
                 'delete' => $app['rest.methods.delete'],
             );
 
-            return new ResourceManager($app['controllers'], $app);
+            return new ResourceManager($app['routes'], $app, $app['route_class']);
         };
 
         $app['rest.listener'] = function() use ($app) {
-            return new RestResponseListener($app['rest']);
+            return new RestResponseListener($app['rest'], $app['rest.annotation_loader']);
         };
 
         $app['rest.serializer'] = function() use ($app) {

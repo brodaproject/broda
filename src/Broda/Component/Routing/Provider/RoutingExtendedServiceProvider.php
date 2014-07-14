@@ -14,11 +14,16 @@ use Symfony\Component\Routing\Router;
  *
  * @author raphael
  */
-class RoutingExtendedServiceProvider extends ServiceProviderInterface
+class RoutingExtendedServiceProvider implements ServiceProviderInterface
 {
     public function register(Container $app)
     {
+
+        $generator_class = get_class($app['url_generator']);
+        $matcher_class = get_class($app['url_matcher']);
+
         $app['controllers_path'] = array();
+        $app['router.options'] = array();
 
         $app['loader.annotation'] = function () use ($app) {
             return new AnnotationDirectoryLoader(
@@ -27,16 +32,16 @@ class RoutingExtendedServiceProvider extends ServiceProviderInterface
             );
         };
 
-        $app['router'] = function () use ($app) {
+        $app['router'] = function () use ($app, $generator_class, $matcher_class) {
             $router = new Router(
                     $app['loader.annotation'],
-                    '*.php',
+                    '',
                     array(
                         'cache_dir' => $app['router.options']['cache_dir'],
                         'debug' => $app['debug'],
-                        'generator_class' => get_class($app['url_generator']),
+                        'generator_class' => $generator_class,
                         'generator_cache_class' => 'BrodaUrlGenerator',
-                        'matcher_class' => get_class($app['url_matcher']),
+                        'matcher_class' => $matcher_class,
                         'matcher_cache_class' => 'BrodaUrlMatcher',
                     ),
                     $app['request_context']
@@ -44,11 +49,17 @@ class RoutingExtendedServiceProvider extends ServiceProviderInterface
             return $router;
         };
 
-        $app->extend('url_matcher', function ($matcher) use ($app) {
+        unset($app['routes']);
+        $app['routes'] = function () use ($app) {
+            return $app['router']->getRouteCollection();
+        };
+
+        unset($app['url_matcher'], $app['url_generator']);
+        $app['url_matcher'] = function () use ($app) {
             return $app['router'];
-        });
-        $app->extend('url_generator', function ($generator) use ($app) {
+        };
+        $app['url_generator'] = function () use ($app) {
             return $app['router'];
-        });
+        };
     }
 }

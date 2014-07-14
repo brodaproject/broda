@@ -8,14 +8,14 @@ use Symfony\Component\HttpFoundation\ParameterBag;
  * Classe DefaultFilter
  *
  * Usa a query da url ($_GET) para buscar, ordenar e limitar os registros.
- * Ex: "url?s=xyz&limit=20" vai filtrar os registros que contenham em algum lugar "xyz",
+ * Ex: "url?s=xyz&len=20" vai filtrar os registros que contenham em algum lugar "xyz",
  * e irá mostrar só as primeiras 20 linhas.
  *
  *  - Querys usadas:
  *
  *          s: search global
- *     offset: registro inicial
- *      limit: numero de registros a serem mostrados
+ *      start: registro inicial
+ *        len: numero de registros a serem mostrados
  *      order: nome da coluna a ser ordenada (só ASC é suportado; pode ser um array para ordenar por mais de uma)
  *   [coluna]: search individual, pela coluna
  *
@@ -55,13 +55,13 @@ class DefaultFilter extends AbstractFilter
         }
 
         // limits
-        if ($params['offset']) {
-            $this->firstResult = (int)$params['offset'];
-            unset($params['offset']); // apaga para nao ser confundido com campo no search individual
+        if ($params['start']) {
+            $this->firstResult = (int)$params['start'];
+            unset($params['start']); // apaga para nao ser confundido com campo no search individual
         }
-        if ($params['limit']) {
-            $this->maxResults = min(50, (int)$params['limit']);
-            unset($params['limit']); // apaga para nao ser confundido com campo no search individual
+        if ($params['len']) {
+            $this->maxResults = min(50, (int)$params['len']);
+            unset($params['len']); // apaga para nao ser confundido com campo no search individual
         }
 
         // orderings (order array query parameter)
@@ -86,6 +86,10 @@ class DefaultFilter extends AbstractFilter
 
         // columns search (other query parameters are column searches)
         foreach ($params as $col => $value) {
+            // FIXME: pensar se este if realmente é legal ter aqui
+            if (!$this->hasColumn($col)) {
+                $this->columns[] = new Param\Column($col);
+            }
             if (!$this->isEmpty($value) && $this->hasColumn($col)) {
                 $this->columnSearchs[] = new Param\Searching($value, false, $col);
             }

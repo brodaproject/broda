@@ -18,24 +18,9 @@ use Silex\Application;
 class DoctrineAnnotationServiceProvider implements ServiceProviderInterface, BootableProviderInterface
 {
 
-    public function register(Container $app)
+    public function __construct(array $loaders = array(), array $globalIgnores = array())
     {
-        $app['annotation.loaders'] = array();
-
-        $app['annotation.global_ignores_names'] = array();
-
-        $app['annotation.cache'] = function () use ($app) {
-            return new ArrayCache();
-        };
-
-        $app['annotation.reader'] = function () use ($app) {
-            return new AnnotationReader();
-        };
-    }
-
-    public function boot(Application $app)
-    {
-        foreach ((array)$app['annotation.loaders'] as $loader) {
+        foreach ($loaders as $loader) {
             if (is_object($loader) && method_exists($loader, 'loadClass')) {
                 // support for composer/symfony's autoloader
                 AnnotationRegistry::registerLoader(array($loader, 'loadClass'));
@@ -52,15 +37,30 @@ class DoctrineAnnotationServiceProvider implements ServiceProviderInterface, Boo
             }
         }
 
-        foreach ((array)$app['annotation.global_ignores_names'] as $annotation) {
+        foreach ($globalIgnores as $annotation) {
             AnnotationReader::addGlobalIgnoredName($annotation);
         }
+    }
 
+    public function register(Container $app)
+    {
+        $app['annotation.cache'] = function () use ($app) {
+            return new ArrayCache();
+        };
+
+        $app['annotation.reader'] = function () use ($app) {
+            return new AnnotationReader();
+        };
+    }
+
+    public function boot(Application $app)
+    {
         if (!$app['debug']) {
             $app->extend('annotation.reader', function($reader) use ($app) {
                 return new CachedReader($reader, $app['annotation.cache']);
             });
         }
+
     }
 
 }
