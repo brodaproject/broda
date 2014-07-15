@@ -15,10 +15,9 @@ use Symfony\Component\Routing\Annotation\Route as BaseRoute;
 class Route extends BaseRoute
 {
 
-    public function setOptions($options)
+    public function addOptions($options)
     {
-        $oldOptions = parent::getOptions();
-        parent::setOptions(array_merge($oldOptions, $options));
+        $this->setOptions(array_merge($this->getOptions(), $options));
     }
 
     public function setAsserts($requirements)
@@ -33,7 +32,7 @@ class Route extends BaseRoute
 
     public function setConverts($callbacks)
     {
-        $this->setOptions(array('_converters' => $callbacks));
+        $this->addOptions(array('_converters' => $callbacks));
     }
 
     public function getConverts()
@@ -44,7 +43,7 @@ class Route extends BaseRoute
 
     public function setBefore($befores)
     {
-        $this->setOptions(array('_before_middlewares' => (array)$befores));
+        $this->addOptions(array('_before_middlewares' => (array)$befores));
     }
 
     public function getBefore()
@@ -55,7 +54,7 @@ class Route extends BaseRoute
 
     public function setAfter($after)
     {
-        $this->setOptions(array('_after_middlewares' => (array)$after));
+        $this->addOptions(array('_after_middlewares' => (array)$after));
     }
 
     public function getAfter()

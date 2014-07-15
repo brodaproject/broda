@@ -19,29 +19,30 @@ class RoutingExtendedServiceProvider implements ServiceProviderInterface
     public function register(Container $app)
     {
 
-        $generator_class = get_class($app['url_generator']);
-        $matcher_class = get_class($app['url_matcher']);
+        if (!isset($app['request_context'])) {
+            throw new \LogicException('Register RoutingServiceProvider first');
+        }
 
         $app['controllers_path'] = array();
         $app['router.options'] = array();
 
-        $app['loader.annotation'] = function () use ($app) {
+        $app['router.loader'] = function () use ($app) {
             return new AnnotationDirectoryLoader(
                     new FileLocator($app['controllers_path']),
                     new AnnotationClassLoader($app['annotation.reader'])
             );
         };
 
-        $app['router'] = function () use ($app, $generator_class, $matcher_class) {
+        $app['router'] = function () use ($app) {
             $router = new Router(
-                    $app['loader.annotation'],
+                    $app['router.loader'],
                     '',
                     array(
                         'cache_dir' => $app['router.options']['cache_dir'],
                         'debug' => $app['debug'],
-                        'generator_class' => $generator_class,
+                        'generator_class' => 'Symfony\Component\Routing\Generator\UrlGenerator',
                         'generator_cache_class' => 'BrodaUrlGenerator',
-                        'matcher_class' => $matcher_class,
+                        'matcher_class' => 'Silex\Provider\Routing\RedirectableUrlMatcher',
                         'matcher_cache_class' => 'BrodaUrlMatcher',
                     ),
                     $app['request_context']
@@ -49,17 +50,17 @@ class RoutingExtendedServiceProvider implements ServiceProviderInterface
             return $router;
         };
 
-        unset($app['routes']);
-        $app['routes'] = function () use ($app) {
-            return $app['router']->getRouteCollection();
-        };
+        $app->extend('routes', function ($oldRoutes) use ($app) {
+            $routes = $app['router']->getRouteCollection();
+            $routes->addCollection($oldRoutes); // aggregates old-school defined routes
+            return $routes;
+        });
 
-        unset($app['url_matcher'], $app['url_generator']);
-        $app['url_matcher'] = function () use ($app) {
+        $app->extend('url_matcher', function () use ($app) {
             return $app['router'];
-        };
-        $app['url_generator'] = function () use ($app) {
+        });
+        $app->extend('url_generator', function () use ($app) {
             return $app['router'];
-        };
+        });
     }
 }

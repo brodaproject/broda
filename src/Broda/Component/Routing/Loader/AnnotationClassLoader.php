@@ -16,7 +16,8 @@ class AnnotationClassLoader extends BaseAnnotationClassLoader
             \ReflectionClass $class, \ReflectionMethod $method, $annot)
     {
         // defines the controller
-        $route->setDefault('_controller', $class->getName().'::'.$method->getName());
+        $route->setDefault('_controller', $class->getName() . '::' . $method->getName());
+
         // verify the other callbacks
         $options = $annot->getOptions();
         foreach ($options as $prop => &$values) {
@@ -33,7 +34,6 @@ class AnnotationClassLoader extends BaseAnnotationClassLoader
                 }
             }
             unset($value); // clear reference
-
         }
         unset($values);
 
