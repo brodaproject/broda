@@ -73,23 +73,75 @@ interface ApiResourceInterface /*extends ApiResourceCreatorInterface*/
      */
     public function getFormat();
 
-    // TODO doc
+    /**
+     * Define o path do resource.
+     *
+     * O path suporta o seguinte formato:
+     *
+     * /resource/{id}.format?query1=value1&q=v
+     *
+     * A query string é opcional e pode ser definida pelo setParameters().
+     * O {id} é obrigatório e indica o placeholder de onde o identifier
+     * do resource irá ficar.
+     * O format é opcional e é considerado tudo que estiver depois do ponto.
+     *
+     * @param type $path
+     * @return ApiResourceInterface
+     */
     public function setPath($path);
 
-    // TODO doc
+    /**
+     * Retorna o path do resource, o mesmo que foi definido.
+     *
+     * @return string
+     */
     public function getPath();
 
-    // TODO doc
+    /**
+     * Retorna os parametros query string que serão passados em todos os requests
+     * deste resource.
+     *
+     * @return array
+     */
     public function getParameters();
 
-    // TODO doc
+    /**
+     * Retorna um parametro da query string que será passada em todos os requests
+     * deste resource.
+     *
+     * @return string
+     */
     public function getParameter($key);
 
-    // TODO doc
+    /**
+     * Define os parametros query string que serão passados em todos os requests
+     * deste resource.
+     *
+     * Substitui qualquer parametro já definido.
+     *
+     * @param array $params
+     * @return ApiResourceInterface
+     */
     public function setParameters(array $params);
 
-    // TODO doc
+    /**
+     * Define um parametro da query string que será passada em todos os requests
+     * deste resource.
+     *
+     * Substitui o valor do key que já existir.
+     *
+     * @param string $key
+     * @param string $value
+     * @return ApiResourceInterface
+     */
     public function setParameter($key, $value);
+
+    /**
+     * Retorna o nome do resource definido no Api
+     *
+     * @return string
+     */
+    public function getName();
 
     /**
      * Retorna o caminho completo formatado do resource

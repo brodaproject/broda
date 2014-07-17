@@ -17,11 +17,6 @@ abstract class AbstractElement implements ElementInterface
     protected $resource;
     protected $id;
 
-    public function __construct($id = null)
-    {
-        $this->id = $id;
-    }
-
     public function getId()
     {
         return $this->id;
@@ -48,20 +43,10 @@ abstract class AbstractElement implements ElementInterface
         return $this->getResource()->trigger($this, $action);
     }
 
-    public function setResource(ResourceInterface $resource)
-    {
-        if (null !== $this->resource) {
-            throw ResourceException::resourceAlreadySet($this);
-        }
-        $this->resource = $resource;
-    }
-
     public function getResource()
     {
         return $this->resource;
     }
-
-    abstract public function toParameters();
 
     public function __call($name, $arguments)
     {

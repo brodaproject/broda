@@ -12,8 +12,14 @@ use Symfony\Component\HttpFoundation\ParameterBag;
 class DataTableLegacyFilter extends DataTableFilter
 {
 
+    /**
+     * {@inheritDoc}
+     */
     protected $ajaxSrc = 'aaData';
 
+    /**
+     * {@inheritDoc}
+     */
     public function __construct(ParameterBag $request)
     {
         $data = $this->normalizeRequestData($request->all());
@@ -22,6 +28,9 @@ class DataTableLegacyFilter extends DataTableFilter
         parent::__construct($normalizedRequest);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function getOutputResponse($output)
     {
         $a = $this->ajaxSrc;
@@ -33,6 +42,13 @@ class DataTableLegacyFilter extends DataTableFilter
         );
     }
 
+    /**
+     * Transforma os parametros do request do Datatables 1.9 em parametros
+     * da versão >=1.10.
+     *
+     * @param array $data
+     * @return array
+     */
     private function normalizeRequestData(array $data)
     {
         // arruma o array do datatables, que vem como objeto
@@ -41,7 +57,7 @@ class DataTableLegacyFilter extends DataTableFilter
         foreach ($data as $i => $o) {
             if (is_numeric($i)) {
                 // datatables 1.9.4
-                if (is_array($o)) { 
+                if (is_array($o)) {
                     $o = (object) $o;
                 }
                 $normalized[$o->name] = $o->value;
@@ -67,6 +83,12 @@ class DataTableLegacyFilter extends DataTableFilter
         return $normalized;
     }
 
+    /**
+     * Auxiliar para normalizar os orders
+     *
+     * @param array $data
+     * @return array
+     */
     private function getOrders(array $data)
     {
         $orders = array();
@@ -81,6 +103,12 @@ class DataTableLegacyFilter extends DataTableFilter
         return $orders;
     }
 
+    /**
+     * Auxiliar para normalizar os columns
+     * 
+     * @param array $data
+     * @return array
+     */
     private function getColumns(array $data)
     {
         $cols = array();

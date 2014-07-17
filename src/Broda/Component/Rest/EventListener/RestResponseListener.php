@@ -38,6 +38,7 @@ class RestResponseListener implements EventSubscriberInterface
     public function onKernelRequest(GetResponseEvent $event)
     {
         if (null !== $this->loader) {
+            // carrega os annotations para criar as rotas dos rests
             $this->loader->load('');
         }
     }
@@ -60,8 +61,11 @@ class RestResponseListener implements EventSubscriberInterface
                 $format = $request->getFormat($accepts[0]);
             }
 
-            $newResponse = new Response($this->rest->formatOutput($response->getData(), $format), 200, array(
-                "Content-Type" => $request->getMimeType($format))
+            $newResponse = new Response($this->rest->formatOutput($response->getData(), $format),
+                200,
+                array(
+                    "Content-Type" => $request->getMimeType($format)
+                )
             );
 
             $event->setResponse($newResponse);

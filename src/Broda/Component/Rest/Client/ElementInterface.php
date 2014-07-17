@@ -23,28 +23,6 @@ interface ElementInterface
     public function setId($id);
 
     /**
-     * Retorna o resource pelo qual o elemento está representado
-     *
-     * @return ResourceInterface|null
-     */
-    public function getResource();
-
-    /**
-     * @api
-     *
-     * Define o resource do elemento
-     *
-     * @param ResourceInterface
-     * @throws ResourceException Se tentar mudar o resource que já foi definido
-     */
-    public function setResource(ResourceInterface $resource);
-
-    /**
-     * @return array Todas as propriedades do objeto em array
-     */
-    public function toParameters();
-
-    /**
      * Salva o elemento
      *
      * @return bool Sempre TRUE

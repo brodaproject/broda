@@ -2,9 +2,9 @@
 
 namespace Broda\Component\Rest\Loader;
 
-use Broda\Component\Rest\Annotation\ResourceMethod;
-use Broda\Component\Rest\Resource;
-use Broda\Component\Rest\ResourceManager;
+use Broda\Component\Rest\Annotation\Server\ResourceMethod;
+use Broda\Component\Rest\Server\Resource;
+use Broda\Component\Rest\Server\ResourceManager;
 use Doctrine\Common\Annotations\Reader;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\Config\Loader\LoaderResolverInterface;
@@ -57,7 +57,7 @@ class AnnotationClassLoader implements LoaderInterface
         $controller = '';
 
         // get resource
-        $annot = $this->reader->getClassAnnotation($class, 'Broda\Component\Rest\Annotation\Resource');
+        $annot = $this->reader->getClassAnnotation($class, 'Broda\Component\Rest\Annotation\Server\Resource');
 
         if (null !== $annot) {
             $path = $annot->getBasePath() . '/{'.$annot->getIdName().'}';
@@ -114,6 +114,18 @@ class AnnotationClassLoader implements LoaderInterface
         return $resource;
     }
 
+    /**
+     * Retorna o routeType padrão para um nome de método.
+     *
+     * Por ex, por padrão, o método 'all' é mapeado para o routeType 'all'.
+     * Esses padrões podem ser alterados no Resource::$defaultMethods, onde
+     * os keys são os routeType e os values são os nomes dos métodos.
+     *
+     * Se não encontrado, o routeType padrão será o nome do método.
+     *
+     * @param string $methodName
+     * @return string
+     */
     private function getDefaultRouteType($methodName)
     {
         $defaults = Resource::$defaultMethods;

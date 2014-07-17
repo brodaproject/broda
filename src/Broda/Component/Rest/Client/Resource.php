@@ -52,18 +52,27 @@ class Resource implements ResourceInterface
         $this->elementMetadataFactory = new ElementMetadataFactory;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function find($id)
     {
         $data = $this->execute('GET', $this->apiResource->getCurrentPath($id));
         return $this->rest->createObject($data, $this->apiResource->getClass(), $this->apiResource->getFormat());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function all($criteria = null)
     {
-        $data = $this->execute('GET', $this->apiResource->getCurrentPath(null, null, $criteria));
-        return $this->rest->createObject($data, $this->apiResource->getClass(), $this->apiResource->getFormat());
+        $data = $this->execute('GET', $this->apiResource->getCurrentPath(null, null, (array)$criteria));
+        return $this->rest->createObject($data, 'array<'.$this->apiResource->getClass().'>', $this->apiResource->getFormat());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function save($element)
     {
         $class = $this->apiResource->getClass();
@@ -76,9 +85,14 @@ class Resource implements ResourceInterface
         }
         $data = $this->rest->formatOutput($element, $this->apiResource->getFormat());
 
-        // mapeia as propriedades e retorna uma classe com os metadados
-        $metadata = $this->elementMetadataFactory->getMetadata($class);
-        $id = $metadata->getIdentifier($element);
+        if ($element instanceof ElementInterface) {
+            // mais rápido e fácil
+            $id = $element->getId();
+        } else {
+            // mapeia as propriedades e retorna uma classe com os metadados
+            $metadata = $this->elementMetadataFactory->getMetadata($class);
+            $id = $metadata->getIdentifier($element);
+        }
 
         $response = $this->execute($id ? 'PUT' : 'POST', $this->apiResource->getCurrentPath($id), $data);
         if (!$id) {
@@ -87,6 +101,9 @@ class Resource implements ResourceInterface
         return $element;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function delete($element)
     {
         $class = $this->apiResource->getClass();
@@ -98,9 +115,15 @@ class Resource implements ResourceInterface
             ));
         }
 
-        // mapeia as propriedades e retorna uma classe com os metadados
-        $metadata = $this->elementMetadataFactory->getMetadata($class);
-        $id = $metadata->getIdentifier($element);
+        if ($element instanceof ElementInterface) {
+            // mais rápido e fácil
+            $id = $element->getId();
+        } else {
+            // mapeia as propriedades e retorna uma classe com os metadados
+            $metadata = $this->elementMetadataFactory->getMetadata($class);
+            $id = $metadata->getIdentifier($element);
+        }
+
         if (!$id) {
             throw new \InvalidArgumentException(sprintf(
                     'Necessário um identifier para o objeto %s no resource %s',
@@ -113,6 +136,9 @@ class Resource implements ResourceInterface
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function trigger($element, $action)
     {
         $class = $this->apiResource->getClass();
@@ -124,9 +150,15 @@ class Resource implements ResourceInterface
             ));
         }
 
-        // mapeia as propriedades e retorna uma classe com os metadados
-        $metadata = $this->elementMetadataFactory->getMetadata($class);
-        $id = $metadata->getIdentifier($element);
+        if ($element instanceof ElementInterface) {
+            // mais rápido e fácil
+            $id = $element->getId();
+        } else {
+            // mapeia as propriedades e retorna uma classe com os metadados
+            $metadata = $this->elementMetadataFactory->getMetadata($class);
+            $id = $metadata->getIdentifier($element);
+        }
+
         if (!$id) {
             throw new \InvalidArgumentException(sprintf(
                     'Necessário um identifier para o objeto %s no resource %s',
@@ -135,17 +167,28 @@ class Resource implements ResourceInterface
             ));
         }
 
-        $this->execute('PATCH', $this->apiResource->getCurrentPath($id, $action));
-        return true;
+        return $this->execute('PATCH', $this->apiResource->getCurrentPath($id, $action));
     }
 
+    /**
+     * Executa uma url e retorna seu response
+     *
+     * @param string $method GET, POST, PUT, PATCH, DELETE
+     * @param string $url Url a ser chamada
+     * @param string $body Conteúdo POST/PUT a ser mandado junto
+     * @return string Response crú do servidor
+     * @throws \Exception Se houve algum erro com a conexão
+     */
     private function execute($method, $url, $body = null)
     {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Expect:', 'Accept: application/json,*/*;q=0.5', 'Content-type: application/json'));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Expect:',
+            'Accept: application/json,*/*;q=0.5', 'Content-type: application/json'
+        ));
 
         /*$username = $request->getUsername();
         $password = $request->getPassword();
@@ -155,8 +198,9 @@ class Resource implements ResourceInterface
         }*/
 
         switch ($method) {
-            case 'POST':
             case 'PUT':
+                curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PUT');
+            case 'POST':
                 curl_setopt($ch, CURLOPT_POST, 1);
                 curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
                 break;

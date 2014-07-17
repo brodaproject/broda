@@ -43,11 +43,27 @@ class DoctrineObjectConstructor implements ObjectConstructorInterface
         // Managed entity, check for proxy load
         if (!is_array($data)) {
             // Single identifier, load proxy
-            return $objectManager->getReference($metadata->name, $data);
+            try {
+                return $objectManager->getReference($metadata->name, $data);
+            } catch (\Doctrine\ORM\Mapping\MappingException $ex) {
+                // Metadata not exists or class not exists in namespace, proceed with normal deserialization
+                return $this->fallbackConstructor->construct($visitor, $metadata, $data, $type, $context);
+            } catch (\Doctrine\Common\Persistence\Mapping\MappingException $ex) {
+                // Metadata not exists or class not exists in namespace, proceed with normal deserialization
+                return $this->fallbackConstructor->construct($visitor, $metadata, $data, $type, $context);
+            }
         }
 
         // Fallback to default constructor if missing identifier(s)
-        $classMetadata  = $objectManager->getClassMetadata($metadata->name);
+        try {
+            $classMetadata  = $objectManager->getClassMetadata($metadata->name);
+        } catch (\Doctrine\ORM\Mapping\MappingException $ex) {
+            // Metadata not exists or class not exists in namespace, proceed with normal deserialization
+            return $this->fallbackConstructor->construct($visitor, $metadata, $data, $type, $context);
+        } catch (\Doctrine\Common\Persistence\Mapping\MappingException $ex) {
+            // Metadata not exists or class not exists in namespace, proceed with normal deserialization
+            return $this->fallbackConstructor->construct($visitor, $metadata, $data, $type, $context);
+        }
         $identifierList = array();
 
         foreach ($classMetadata->getIdentifierFieldNames() as $name) {

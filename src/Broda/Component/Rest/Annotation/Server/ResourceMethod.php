@@ -1,6 +1,6 @@
 <?php
 
-namespace Broda\Component\Rest\Annotation;
+namespace Broda\Component\Rest\Annotation\Server;
 
 /**
  * Extensão para definição de um resource

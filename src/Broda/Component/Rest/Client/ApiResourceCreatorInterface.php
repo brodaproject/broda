@@ -17,6 +17,7 @@ namespace Broda\Component\Rest\Client;
  */
 interface ApiResourceCreatorInterface
 {
+
     /**
      * Cria um ApiResource
      *
