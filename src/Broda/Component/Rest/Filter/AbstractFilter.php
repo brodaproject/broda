@@ -158,7 +158,26 @@ abstract class AbstractFilter implements FilterInterface
      */
     public static function setDefaultColumns(array $columns)
     {
-        static::$defaultColumns = $columns;
+        static::$defaultColumns = array();
+
+        foreach ($columns as $col) {
+            if (is_string($col)) {
+                // simple
+                static::$defaultColumns[] = new Param\Column($col);
+            } else {
+                // complete reference
+                if ($col instanceof Param\Column) {
+                    static::$defaultColumns[] = $col;
+
+                } else {
+                    $column = new Param\Column($col['name'], $col['data']);
+                    $column->setOrderable((bool)$col['orderable']);
+                    $column->setSearchable((bool)$col['searchable']);
+
+                    static::$defaultColumns[] = $column;
+                }
+            }
+        }
     }
 
     /**
