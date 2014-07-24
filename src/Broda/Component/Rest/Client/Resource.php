@@ -187,7 +187,8 @@ class Resource implements ResourceInterface
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array(
             'Expect:',
-            'Accept: application/json,*/*;q=0.5', 'Content-type: application/json'
+            'Accept: application/json,*/*;q=0.5',
+            'Content-type: application/json'
         ));
 
         /*$username = $request->getUsername();

@@ -36,7 +36,7 @@ abstract class AbstractFilter implements FilterInterface
 
     /**
      *
-     * @var array
+     * @var Column[]
      */
     protected static $defaultColumns = array();
 
@@ -158,26 +158,37 @@ abstract class AbstractFilter implements FilterInterface
      */
     public static function setDefaultColumns(array $columns)
     {
-        static::$defaultColumns = array();
+        static::$defaultColumns = static::normalizeColumns($columns);
+    }
 
+    /**
+     * Normaliza as colunas passadas por parametro e transforma em objetos
+     * do tipo Column.
+     *
+     * @param string[]|array[]|Column[] $columns
+     */
+    public static function normalizeColumns(array $columns)
+    {
+        $normalizedCols = array();
         foreach ($columns as $col) {
             if (is_string($col)) {
                 // simple
-                static::$defaultColumns[] = new Param\Column($col);
+                $normalizedCols[] = new Column($col);
             } else {
                 // complete reference
-                if ($col instanceof Param\Column) {
-                    static::$defaultColumns[] = $col;
+                if ($col instanceof Column) {
+                    $normalizedCols[] = $col;
 
                 } else {
-                    $column = new Param\Column($col['name'], $col['data']);
+                    $column = new Column($col['name'], $col['data']);
                     $column->setOrderable((bool)$col['orderable']);
                     $column->setSearchable((bool)$col['searchable']);
 
-                    static::$defaultColumns[] = $column;
+                    $normalizedCols[] = $column;
                 }
             }
         }
+        return $normalizedCols;
     }
 
     /**
@@ -192,23 +203,23 @@ abstract class AbstractFilter implements FilterInterface
             // datatables
             if ($request->request->get('draw')) {
                 // 1.10 >=
-                return new DataTableFilter($request->request);
+                return new DataTableFilter($request->request->all());
             } elseif ($request->request->get('sEcho')) {
                 // 1.9 legacy or 1.10 em modo de compatibilidade
-                return new DataTableLegacyFilter($request->request);
+                return new DataTableLegacyFilter($request->request->all());
             }
         } else {
             if ($request->query->get('limit') && $request->query->get('offset', 1)) {
                 // defina as defaultColumns se você vai usar a detecção automatica
                 // ou senão o search global e os orders não irão funcionar
                 // (só para as colunas definidas como filtros individuais)
-                return new BootstrapTableFilter($request->query);
+                return new BootstrapTableFilter($request->query->all());
 
-            } elseif (count($request->query->all())) {
+            } elseif ($request->query->count()) {
                 // defina as defaultColumns se você vai usar a detecção automatica
                 // ou senão o search global e os orders não irão funcionar
                 // (só para as colunas definidas como filtros individuais)
-                return new DefaultFilter($request->query);
+                return new DefaultFilter($request->query->all());
             }
         }
 

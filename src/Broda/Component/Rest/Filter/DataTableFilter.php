@@ -2,8 +2,6 @@
 
 namespace Broda\Component\Rest\Filter;
 
-use Symfony\Component\HttpFoundation\ParameterBag;
-
 /**
  * Classe DataTableFilter
  *
@@ -14,9 +12,9 @@ class DataTableFilter extends AbstractFilter
 
     /**
      *
-     * @var ParameterBag
+     * @var array
      */
-    protected $params;
+    protected $params = array();
 
     protected $totalRecords = 0;
 
@@ -24,23 +22,19 @@ class DataTableFilter extends AbstractFilter
 
     protected $ajaxSrc = 'data';
 
-    public function __construct(ParameterBag $request)
+    public function __construct(array $request)
     {
         $this->params = $request;
 
-        $this->firstResult = (int)$request->get('start');
-        $this->maxResults = min(50, (int)$request->get('length', 30)); // max 50 lines per request;
+        $this->firstResult = (int)$request['start'];
+        $this->maxResults = min(50, (int)$request['length'] ?: 30); // max 50 lines per request;
 
-        $columns = $request->get('columns', static::$defaultColumns);
-        $orders = $request->get('order', array());
+        $columns = empty($request['columns']) ? static::$defaultColumns : static::normalizeColumns($request['columns']);
+        $orders = $request['order'] ?: array();
 
         // defining columns and searchings
-        foreach ($columns as $col) {
-            $column = new Param\Column($col['name'], $col['data']);
-            $column->setSearchable((bool)$col['searchable']);
-            $column->setOrderable((bool)$col['orderable']);
-
-            $this->columns[] = $column;
+        $this->columns = $columns;
+        foreach ($request['columns'] as $col) {
 
             if ($col['search']['value']) {
                 $colSearch = new Param\Searching($col['search']['value'],
@@ -51,8 +45,8 @@ class DataTableFilter extends AbstractFilter
         }
 
         // defining search all
-        if ($request->get('search[value]', null, true)) {
-            $search = $request->get('search[value]', '', true);
+        if ($request['search']['value']) {
+            $search = $request['search']['value'] ?: '';
 
             $this->globalSearch = new Param\Searching($search, false);
         }
@@ -87,7 +81,7 @@ class DataTableFilter extends AbstractFilter
     {
         $a = $this->ajaxSrc;
         return array(
-            'draw' => (int)$this->params->get('draw'),
+            'draw' => (int)$this->params['draw'],
             'recordsTotal' => $this->totalRecords,
             'recordsFiltered' => $this->totalFiltered,
             $a => $output

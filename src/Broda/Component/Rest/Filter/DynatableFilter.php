@@ -17,7 +17,7 @@ class DynatableFilter extends AbstractFilter
 
     /**
      *
-     * @var ParameterBag
+     * @var array
      */
     protected $params;
 
@@ -27,35 +27,14 @@ class DynatableFilter extends AbstractFilter
 
     protected $ajaxSrc = 'records';
 
-    public function __construct(ParameterBag $request, array $columns = array())
+    public function __construct(array $request, array $columns = array())
     {
         $this->params = $request;
 
-        $this->firstResult = (int)$request->get('offset');
-        $this->maxResults = min(50, (int)$request->get('perPage', 30)); // max 50 lines per request;
+        $this->firstResult = (int)$request['offset'];
+        $this->maxResults = min(50, (int)$request['perPage'] ?: 30); // max 50 lines per request;
 
-        if (empty($columns)) {
-            $columns = static::$defaultColumns;
-        }
-
-        foreach ($columns as $col) {
-            if (is_string($col)) {
-                // simple
-                $this->columns[] = new Param\Column($col);
-            } else {
-                // complete reference
-                if ($col instanceof Param\Column) {
-                    $this->columns[] = $col;
-
-                } else {
-                    $column = new Param\Column($col['name'], $col['data']);
-                    $column->setOrderable((bool)$col['orderable']);
-                    $column->setSearchable((bool)$col['searchable']);
-
-                    $this->columns[] = $column;
-                }
-            }
-        }
+        $this->columns = empty($columns) ? static::$defaultColumns : static::normalizeColumns($columns);
         // FIZ ATÉ AQUI, CONTINUAR
 
         $orders = $request->get('sorts', array());

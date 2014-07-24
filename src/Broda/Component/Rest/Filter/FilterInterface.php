@@ -18,7 +18,7 @@ namespace Broda\Component\Rest\Filter;
  * // com EntityRepository
  * function getAllRecords(Request $request)
  * {
- *    $filter = new DataTableFilter($request->request);
+ *    $filter = new DataTableFilter($request->request->all());
  *
  *    $repo = $this->em->getRepository('ModelX');
  *    $filteredRegs = $this->restService->filter($repo, $filter);
@@ -29,7 +29,7 @@ namespace Broda\Component\Rest\Filter;
  * // com Selectable
  * function getAllRecords(Request $request)
  * {
- *    $filter = new DataTableFilter($request->request);
+ *    $filter = new DataTableFilter($request->request->all());
  *
  *    $data = new ArrayCollection(require '/path/to/data.json'); // ou array comum
  *    $filteredRegs = $this->restService->filter($data, $filter);
@@ -75,7 +75,7 @@ interface FilterInterface
     /**
      * Retorna o response da forma que o filtro do lado cliente entenda.
      *
-     * Geralmente, apenas retorne o mesmo resultado que encontrar, mas tem casos,
+     * Geralmente, apenas retorna o mesmo resultado que encontrar, mas tem casos,
      * por exemplo, o datatables, que exige um array com alguns elementos como 'draw'
      * e 'recordsTotal'.
      *

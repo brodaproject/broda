@@ -46,9 +46,7 @@ class Resource
         $this->constructPath(ltrim($path, '/'));
 
         if (null !== $controller) {
-            $defaultMethods = self::$defaultMethods;
-
-            foreach ($defaultMethods as $routeName => $method) {
+            foreach (self::$defaultMethods as $routeName => $method) {
                 $this->rm->match($this, $routeName, sprintf('%s:%s', $controller, $method));
             }
         }

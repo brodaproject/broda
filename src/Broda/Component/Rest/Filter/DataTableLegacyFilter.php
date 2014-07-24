@@ -2,8 +2,6 @@
 
 namespace Broda\Component\Rest\Filter;
 
-use Symfony\Component\HttpFoundation\ParameterBag;
-
 /**
  * Classe DataTableFilter for 1.9
  *
@@ -20,11 +18,9 @@ class DataTableLegacyFilter extends DataTableFilter
     /**
      * {@inheritDoc}
      */
-    public function __construct(ParameterBag $request)
+    public function __construct(array $request)
     {
-        $data = $this->normalizeRequestData($request->all());
-        $normalizedRequest = new ParameterBag($data);
-
+        $normalizedRequest = $this->normalizeRequestData($request);
         parent::__construct($normalizedRequest);
     }
 
@@ -35,7 +31,7 @@ class DataTableLegacyFilter extends DataTableFilter
     {
         $a = $this->ajaxSrc;
         return array(
-            'sEcho' => (int)$this->params->get('draw'),
+            'sEcho' => (int)$this->params['draw'],
             'iTotalRecords' => $this->totalRecords,
             'iTotalDisplayRecords' => $this->totalFiltered,
             $a => $output
@@ -77,8 +73,8 @@ class DataTableLegacyFilter extends DataTableFilter
             'value' => $normalized['sSearch'],
             'regex' => $normalized['bRegex'],
         );
-        $normalized['columns'] = $this->getColumns($normalized);
-        $normalized['order'] = $this->getOrders($normalized);
+        $normalized['columns'] = $this->getDtColumns($normalized);
+        $normalized['order'] = $this->getDtOrders($normalized);
 
         return $normalized;
     }
@@ -89,11 +85,11 @@ class DataTableLegacyFilter extends DataTableFilter
      * @param array $data
      * @return array
      */
-    private function getOrders(array $data)
+    private function getDtOrders(array $data)
     {
         $orders = array();
         $i=0;
-        while ($data['iSortDir_'.$i] && $i<10) { // <10 para evitar loop infinito por algum problema
+        while ($data['sSortDir_'.$i]) {
             $orders[$i] = array(
                 'column' => $data['iSortCol_'.$i],
                 'dir' => $data['sSortDir_'.$i],
@@ -105,11 +101,11 @@ class DataTableLegacyFilter extends DataTableFilter
 
     /**
      * Auxiliar para normalizar os columns
-     * 
+     *
      * @param array $data
      * @return array
      */
-    private function getColumns(array $data)
+    private function getDtColumns(array $data)
     {
         $cols = array();
         $i=0;
@@ -117,7 +113,7 @@ class DataTableLegacyFilter extends DataTableFilter
         // names comes in format: name1,name2,name3...
         $names = explode(',', $data['sColumns']);
 
-        while ($i < $data['iColumns'] || $i<30) { // <30 para evitar loop infinito por algum problema
+        while ($i < $data['iColumns']) {
             $cols[$i] = array(
                 'data' => $data['mDataProp_'.$i],
                 'name' => $names[$i],

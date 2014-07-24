@@ -2,8 +2,6 @@
 
 namespace Broda\Component\Rest\Filter;
 
-use Symfony\Component\HttpFoundation\ParameterBag;
-
 /**
  * Classe DataTableFilter
  *
@@ -14,45 +12,24 @@ class BootstrapTableFilter extends AbstractFilter
 
     /**
      *
-     * @var ParameterBag
+     * @var array
      */
     protected $params;
 
     protected $totalRecords = 0;
 
-    public function __construct(ParameterBag $request, array $columns = array())
+    public function __construct(array $request, array $columns = array())
     {
         $this->params = $request;
 
-        $this->firstResult = (int)$request->get('offset');
-        $this->maxResults = min(50, (int)$request->get('limit', 30)); // max 50 lines per request;
+        $this->firstResult = (int)$request['offset'];
+        $this->maxResults = min(50, (int)$request['limit'] ?: 30); // max 50 lines per request;
 
-        if (empty($columns)) {
-            $columns = static::$defaultColumns;
-        }
-
-        foreach ($columns as $col) {
-            if (is_string($col)) {
-                // simple
-                $this->columns[] = new Param\Column($col);
-            } else {
-                // complete reference
-                if ($col instanceof Param\Column) {
-                    $this->columns[] = $col;
-
-                } else {
-                    $column = new Param\Column($col['name'], $col['data']);
-                    $column->setOrderable((bool)$col['orderable']);
-                    $column->setSearchable((bool)$col['searchable']);
-
-                    $this->columns[] = $column;
-                }
-            }
-        }
+        $this->columns = empty($columns) ? static::$defaultColumns : static::normalizeColumns($columns);
 
         // bootstrap table only supports global search
-        if ($request->get('search', null)) {
-            $search = $request->get('search', '');
+        if ($request['search']) {
+            $search = $request['search'] ?: '';
 
             $this->globalSearch = new Param\Searching($search, false);
         }
