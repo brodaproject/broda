@@ -2,6 +2,9 @@
 
 namespace Broda\Component\Rest\Filter\Param;
 
+use Broda\Component\Rest\Filter\Tokenizers\BasicTokenizer;
+use Broda\Component\Rest\Filter\Tokenizers\TokenizerInterface;
+
 /**
  * Classe Searching
  *
@@ -13,6 +16,11 @@ class Searching
     protected $value;
     protected $regex = false;
     protected $columnName = null;
+    /**
+     *
+     * @var TokenizerInterface
+     */
+    protected $tokenizer;
 
     public function __construct($value, $regex = false, $columnName = null)
     {
@@ -36,6 +44,11 @@ class Searching
         return $this->columnName;
     }
 
+    public function getTokens()
+    {
+        return $this->getTokenizer()->tokenize($this->value);
+    }
+
     public function setValue($value)
     {
         $this->value = $value;
@@ -53,6 +66,20 @@ class Searching
         $this->columnName = $columnName;
         return $this;
     }
+
+    public function setTokenizer(TokenizerInterface $tokenizer)
+    {
+        $this->tokenizer = $tokenizer;
+    }
+
+    public function getTokenizer()
+    {
+        if (null === $this->tokenizer) {
+            $this->tokenizer = new BasicTokenizer();
+        }
+        return $this->tokenizer;
+    }
+
 
 
 }

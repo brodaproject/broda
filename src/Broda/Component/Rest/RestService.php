@@ -6,6 +6,7 @@ use Broda\Component\Rest\Filter\FilterInterface;
 use Broda\Component\Rest\Filter\Param\Column;
 use Broda\Component\Rest\Filter\Param\Ordering;
 use Broda\Component\Rest\Filter\Param\Searching;
+use Broda\Component\Rest\Filter\TotalizableInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\Common\Collections\Selectable;
@@ -83,8 +84,8 @@ class RestService
      */
     public function getFilteringCriteria(FilterInterface $filter, Criteria $criteria = null)
     {
-        if (null === $criteria) $criteria = new Criteria();
-        $criteriaExpr = $criteria->expr();
+        if (null === $criteria) $criteria = Criteria::create();
+        $expr = Criteria::expr();
 
         $columns = $filter->getColumns();
         $columnSearchs = $filter->getColumnSearchs();
@@ -97,31 +98,42 @@ class RestService
         $searchExpr = null;
         foreach ($columnSearchs as $col) {
             /* @var $col Searching */
-            $search = $col->getValue();
             $field = $col->getColumnName();
 
+            $searchColExpr = null;
+            foreach ($col->getTokens() as $search) {
+                
+                if (!isset($searchColExpr)) {
+                    $searchColExpr = $expr->contains($field, $search);
+                } else {
+                    $searchColExpr = $expr->orX($searchColExpr, $expr->contains($field, $search));
+                }
+            }
+
             if (!isset($searchExpr)) {
-                $searchExpr = $criteriaExpr->contains($field, $search);
+                $searchExpr = $searchColExpr;
             } else {
-                $searchExpr = $criteriaExpr->andX($searchExpr, $criteriaExpr->contains($field, $search));
+                $searchExpr = $expr->andX($searchExpr, $searchColExpr);
             }
         }
 
         // defining search all
         $searchAllExpr = null;
         if (null !== $globalSearch) {
-            $search = $globalSearch->getValue();
 
-            foreach ($columns as $col) {
-                /* @var $col Column */
-                $field = $col->getName();
+            foreach ($globalSearch->getTokens() as $search) {
 
-                if (!$col->getSearchable()) continue;
+                foreach ($columns as $col) {
+                    /* @var $col Column */
+                    $field = $col->getName();
 
-                if (!isset($searchAllExpr)) {
-                    $searchAllExpr = $criteriaExpr->contains($field, $search);
-                } else {
-                    $searchAllExpr = $criteriaExpr->orX($searchAllExpr, $criteriaExpr->contains($field, $search));
+                    if (!$col->getSearchable()) continue;
+
+                    if (!isset($searchAllExpr)) {
+                        $searchAllExpr = $expr->contains($field, $search);
+                    } else {
+                        $searchAllExpr = $expr->orX($searchAllExpr, $expr->contains($field, $search));
+                    }
                 }
             }
         }
@@ -167,6 +179,16 @@ class RestService
         }
 
         $criteria = $this->getFilteringCriteria($filter);
+
+        if ($filter instanceof TotalizableInterface) {
+
+            $totalCriteria = Criteria::create();
+            $totalCriteria->where($criteria->getWhereExpression());
+
+            $totalCollection = $collection->matching($totalCriteria);
+            $filter->setTotalRecords($totalCollection->count());
+
+        }
 
         // do the matching
         $result = $collection->matching($criteria);

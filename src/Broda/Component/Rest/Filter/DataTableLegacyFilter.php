@@ -120,7 +120,7 @@ class DataTableLegacyFilter extends DataTableFilter
                 'searchable' => $data['bSearchable_'.$i],
                 'orderable' => $data['bSortable_'.$i],
                 'search' => array(
-                    'value' => $data['bSearch_'.$i],
+                    'value' => $data['sSearch_'.$i],
                     'regex' => $data['bRegex_'.$i],
                 ),
             );

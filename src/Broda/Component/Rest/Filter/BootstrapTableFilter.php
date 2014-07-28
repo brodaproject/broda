@@ -7,7 +7,7 @@ namespace Broda\Component\Rest\Filter;
  *
  * @author raphael
  */
-class BootstrapTableFilter extends AbstractFilter
+class BootstrapTableFilter extends AbstractFilter implements TotalizableInterface
 {
 
     /**
@@ -38,9 +38,19 @@ class BootstrapTableFilter extends AbstractFilter
         $this->orderings = array();
     }
 
-    public function setTotalRecords($total)
+    public function setTotalRecords($total, $totalFiltered = null)
     {
         $this->totalRecords = (int)$total;
+    }
+
+    public function getTotalFilteredRecords()
+    {
+        return $this->totalRecords;
+    }
+
+    public function getTotalRecords()
+    {
+        return $this->totalRecords;
     }
 
     public function getOutputResponse($output)

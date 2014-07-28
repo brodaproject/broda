@@ -7,7 +7,7 @@ namespace Broda\Component\Rest\Filter;
  *
  * @author raphael
  */
-class DataTableFilter extends AbstractFilter
+class DataTableFilter extends AbstractFilter implements TotalizableInterface
 {
 
     /**
@@ -61,15 +61,25 @@ class DataTableFilter extends AbstractFilter
         }
     }
 
-    public function setTotalRecords($total)
+    public function setTotalRecords($total, $totalFiltered = null)
     {
         $this->totalRecords = (int)$total;
         $this->totalFiltered = (int)$total;
     }
 
+    public function getTotalRecords()
+    {
+        return $this->totalRecords;
+    }
+
     public function setTotalFilteredRecords($totalFiltered)
     {
         $this->totalFiltered = (int)$totalFiltered;
+    }
+
+    public function getTotalFilteredRecords()
+    {
+        return $this->totalFiltered;
     }
 
     public function setAjaxSrc($ajaxSrc)
