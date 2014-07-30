@@ -3,25 +3,32 @@
     "type": "library",
     "description": "",
     "require": {
-        "silex/silex": "2.0.*@dev",
+        "pimple/pimple": "~3.0.0",
 
-        "symfony/config": "*",
-        "symfony/filesystem": "*",
-        "symfony/finder": "*",
-        "symfony/validator": "*",
-        "symfony/security": "*",
-        "symfony/serializer": "*",
+        "symfony/event-dispatcher": "~2.5",
+        "symfony/http-foundation": "~2.5",
+        "symfony/http-kernel": "~2.5",
+        "symfony/routing": "~2.5",
+
+        "symfony/config": "~2.5",
+        "symfony/filesystem": "~2.5",
+        "symfony/finder": "~2.5",
+        "symfony/validator": "~2.5",
+        "symfony/security": "~2.5",
+        "symfony/serializer": "~2.5",
+        "symfony/expression-language": "~2.5",
+        "sensio/framework-extra-bundle": "~3.0",
 
         "twig/twig": "~1.15",
 
         "jms/serializer": "*",
-        "kriswallsmith/assetic": "~1",
-        "leafo/lessphp": "*",
-        "mrclay/minify": "*",
 
         "imagine/imagine": "*",
         "doctrine/orm": "~2",
         "monolog/monolog": ">=1.0.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "~4"
     },
     "autoload": {
         "psr-0": { "Broda\\": "src/" }

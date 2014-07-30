@@ -28,17 +28,17 @@ class DefaultFilter extends AbstractFilter
         $this->columns = empty($columns) ? static::$defaultColumns : static::normalizeColumns($columns);
 
         // limits
-        if ($params['start']) {
+        if (isset($params['start'])) {
             $this->firstResult = (int)$params['start'];
             unset($params['start']); // apaga para nao ser confundido com campo no search individual
         }
-        if ($params['len']) {
+        if (isset($params['len'])) {
             $this->maxResults = min(50, (int)$params['len']);
             unset($params['len']); // apaga para nao ser confundido com campo no search individual
         }
 
         // orderings (order array query parameter)
-        if ($params['order']) {
+        if (isset($params['order'])) {
             if (is_string($params['order'])) {
                 $params['order'] = array($params['order']);
             }
@@ -52,7 +52,7 @@ class DefaultFilter extends AbstractFilter
         }
 
         // global search is the 's' query parameter
-        if (!$this->isEmpty($params['s'])) {
+        if (isset($params['s']) && !$this->isEmpty($params['s'])) {
             $this->globalSearch = new Param\Searching($params['s'], false);
             unset($params['s']); // apaga para nao ser confundido com campo no search individual
         }

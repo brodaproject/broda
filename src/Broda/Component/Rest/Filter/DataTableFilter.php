@@ -34,7 +34,7 @@ class DataTableFilter extends AbstractFilter implements TotalizableInterface
 
         // defining columns and searchings
         $this->columns = $columns;
-        foreach ($request['columns'] as $col) {
+        foreach ((array)$request['columns'] as $col) {
 
             if ($col['search']['value']) {
                 $colSearch = new Param\Searching($col['search']['value'],

@@ -2,14 +2,15 @@
 
 namespace Broda\Component\Rest;
 
+use Broda\Component\Rest\Filter\Expr as FilterExpr;
+use Broda\Component\Rest\Filter\Param as FilterParam;
 use Broda\Component\Rest\Filter\FilterInterface;
-use Broda\Component\Rest\Filter\Param\Column;
-use Broda\Component\Rest\Filter\Param\Ordering;
-use Broda\Component\Rest\Filter\Param\Searching;
 use Broda\Component\Rest\Filter\TotalizableInterface;
+
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\Common\Collections\Selectable;
+use Doctrine\ORM\QueryBuilder;
 use JMS\Serializer\Serializer;
 use JMS\Serializer\SerializerBuilder;
 use Symfony\Component\HttpFoundation\Request;
@@ -27,6 +28,11 @@ class RestService
      */
     protected $serializer;
 
+    /**
+     * Constructor.
+     *
+     * @param Serializer $serializer
+     */
     public function __construct(Serializer $serializer = null)
     {
         $this->serializer = $serializer ?: SerializerBuilder::create()->build();
@@ -74,17 +80,58 @@ class RestService
     }
 
     /**
+     * Incorpora um filtro à um QueryBuilder do usuário.
+     *
+     * Todos os pós-filtros serão adicionados ao QueryBuilder. Depois, basta
+     * usar o {@link filter} para retornar os dados.
+     *
+     * @param QueryBuilder $qb
+     * @param FilterInterface $filter
+     * @param array $fieldMap
+     * @return QueryBuilder
+     */
+    public function incorporateQueryBuilder(QueryBuilder $qb, FilterInterface $filter, array $fieldMap = array())
+    {
+        $criteria = $this->getFilteringCriteria($filter);
+
+        $rootAliases = $qb->getRootAliases();
+        $visitor = new FilterExpr\QueryExpressionVisitor($rootAliases, $fieldMap);
+
+        if ($whereExpression = $criteria->getWhereExpression()) {
+            $qb->andWhere($visitor->dispatch($whereExpression));
+            foreach ($visitor->getParameters() as $parameter) {
+                $qb->getParameters()->add($parameter);
+            }
+        }
+
+        if ($criteria->getOrderings()) {
+            foreach ($criteria->getOrderings() as $sort => $order) {
+                $qb->addOrderBy($visitor->getFieldName($sort), $order);
+            }
+        }
+
+        // Overwrite limits only if they was set in criteria
+        if (($firstResult = $criteria->getFirstResult()) !== null) {
+            $qb->setFirstResult($firstResult);
+        }
+        if (($maxResults = $criteria->getMaxResults()) !== null) {
+            $qb->setMaxResults($maxResults);
+        }
+
+        return $qb;
+    }
+
+    /**
      * Retorna o/um Criteria com os pósfiltros do FilterInterface.
      *
      * Útil para
      *
      * @param FilterInterface $filter
-     * @param Criteria $criteria
      * @return Criteria
      */
-    public function getFilteringCriteria(FilterInterface $filter, Criteria $criteria = null)
+    public function getFilteringCriteria(FilterInterface $filter)
     {
-        if (null === $criteria) $criteria = Criteria::create();
+        $criteria = Criteria::create();
         $expr = Criteria::expr();
 
         $columns = $filter->getColumns();
@@ -97,16 +144,15 @@ class RestService
         // defining search especific columns
         $searchExpr = null;
         foreach ($columnSearchs as $col) {
-            /* @var $col Searching */
+            /* @var $col FilterParam\Searching */
             $field = $col->getColumnName();
 
             $searchColExpr = null;
             foreach ($col->getTokens() as $search) {
-                
                 if (!isset($searchColExpr)) {
                     $searchColExpr = $expr->contains($field, $search);
                 } else {
-                    $searchColExpr = $expr->orX($searchColExpr, $expr->contains($field, $search));
+                    $searchColExpr = $expr->andX($searchColExpr, $expr->contains($field, $search));
                 }
             }
 
@@ -121,19 +167,25 @@ class RestService
         $searchAllExpr = null;
         if (null !== $globalSearch) {
 
-            foreach ($globalSearch->getTokens() as $search) {
+            foreach ($columns as $col) {
+                /* @var $col FilterParam\Column */
+                $field = $col->getName();
 
-                foreach ($columns as $col) {
-                    /* @var $col Column */
-                    $field = $col->getName();
+                if (!$col->getSearchable()) continue;
 
-                    if (!$col->getSearchable()) continue;
-
-                    if (!isset($searchAllExpr)) {
-                        $searchAllExpr = $expr->contains($field, $search);
+                $searchColExpr = null;
+                foreach ($globalSearch->getTokens() as $search) {
+                    if (!isset($searchColExpr)) {
+                        $searchColExpr = $expr->contains($field, $search);
                     } else {
-                        $searchAllExpr = $expr->orX($searchAllExpr, $expr->contains($field, $search));
+                        $searchColExpr = $expr->andX($searchColExpr, $expr->contains($field, $search));
                     }
+                }
+
+                if (!isset($searchAllExpr)) {
+                    $searchAllExpr = $searchColExpr;
+                } else {
+                    $searchAllExpr = $expr->orX($searchAllExpr, $searchColExpr);
                 }
             }
         }
@@ -141,7 +193,7 @@ class RestService
         // defining orderings
         $orderings = array();
         foreach ($orders as $order) {
-            /* @var $order Ordering */
+            /* @var $order FilterParam\Ordering */
             $field = $order->getColumn()->getName();
             $dir = $order->getDir();
 
@@ -163,7 +215,7 @@ class RestService
     /**
      * Filters a collection and return data filtered by request
      *
-     * @param Selectable|array $collection
+     * @param Selectable|QueryBuilder|array $collection
      * @param FilterInterface $filter
      * @return type
      * @throws \UnexpectedValueException
@@ -174,10 +226,21 @@ class RestService
             $collection = new ArrayCollection($collection);
         }
 
-        if (!($collection instanceof Selectable)) {
-            throw new \UnexpectedValueException("RestService::filter() only supports arrays or Selectable objects");
+        switch (true) {
+            case ($collection instanceof Selectable):
+                return $this->filterSelectable($collection, $filter);
+            case ($collection instanceof QueryBuilder):
+                return $this->filterQueryBuilder($collection, $filter);
+            default:
+                throw new \UnexpectedValueException("RestService::filter() only supports arrays, Selectable or QueryBuilder objects");
         }
+    }
 
+    /**
+     * @internal
+     */
+    protected function filterSelectable(Selectable $collection, FilterInterface $filter)
+    {
         $criteria = $this->getFilteringCriteria($filter);
 
         if ($filter instanceof TotalizableInterface) {
@@ -190,11 +253,28 @@ class RestService
 
         }
 
-        // do the matching
-        $result = $collection->matching($criteria);
+        return $filter->getOutputResponse($collection->matching($criteria));
+    }
 
-        // select the output method
-        return $filter->getOutputResponse($result);
+    /**
+     * @internal
+     */
+    protected function filterQueryBuilder(QueryBuilder $qb, FilterInterface $filter)
+    {
+        if ($filter instanceof TotalizableInterface) {
+            $rootAliases = $qb->getRootAliases();
+
+            $qbCount = clone $qb;
+            $qbCount->select($qbCount->expr()->count($rootAliases[0]));
+            $qbCount->setFirstResult(null)->setMaxResults(null);
+
+            $filter->setTotalRecords($qbCount->getQuery()->getSingleScalarResult());
+            unset($qbCount);
+        }
+
+        $query = $qb->getQuery();
+
+        return $filter->getOutputResponse($query->getResult());
     }
 
 }
