@@ -34,25 +34,15 @@ class Searching
         return $this->value;
     }
 
-    public function getRegex()
-    {
-        return $this->regex;
-    }
-
-    public function getColumnName()
-    {
-        return $this->columnName;
-    }
-
-    public function getTokens()
-    {
-        return $this->getTokenizer()->tokenize($this->value);
-    }
-
     public function setValue($value)
     {
         $this->value = $value;
         return $this;
+    }
+
+    public function getRegex()
+    {
+        return $this->regex;
     }
 
     public function setRegex($regex)
@@ -61,10 +51,20 @@ class Searching
         return $this;
     }
 
+    public function getColumnName()
+    {
+        return $this->columnName;
+    }
+
     public function setColumnName($columnName)
     {
         $this->columnName = $columnName;
         return $this;
+    }
+
+    public function getTokens()
+    {
+        return $this->getTokenizer()->tokenize($this->value);
     }
 
     public function setTokenizer(TokenizerInterface $tokenizer)

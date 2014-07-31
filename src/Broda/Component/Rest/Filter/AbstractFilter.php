@@ -178,14 +178,16 @@ abstract class AbstractFilter implements FilterInterface
                 // complete reference
                 if ($col instanceof Column) {
                     $normalizedCols[] = $col;
-
-                } else {
-                    $column = new Column($col['name'], $col['data']);
-                    $column->setOrderable((bool)$col['orderable']);
-                    $column->setSearchable((bool)$col['searchable']);
-
-                    $normalizedCols[] = $column;
+                    continue;
                 }
+                $column = new Column($col['name'], isset($col['data']) ? $col['data'] : null);
+                if (isset($col['orderable'])) $column->setOrderable((bool)$col['orderable']);
+                if (isset($col['searchable'])) $column->setSearchable((bool)$col['searchable']);
+                if (isset($col['subcolumns'])) {
+                    $column->setSubColumns(self::normalizeColumns((array)$col['subcolumns']));
+                }
+
+                $normalizedCols[] = $column;
             }
         }
         return $normalizedCols;

@@ -30,20 +30,23 @@ class Ordering
         return $this->column;
     }
 
-    public function getDir()
-    {
-        return $this->dir;
-    }
-
     public function setColumn(Column $column)
     {
         $this->column = $column;
         return $this;
     }
 
+    public function getDir()
+    {
+        return $this->dir;
+    }
+
     public function setDir($dir)
     {
-        $this->dir = strtolower($dir) == 'desc' ? Criteria::DESC : Criteria::ASC;
+        $this->dir = strtolower($dir) == 'desc' ||
+                $dir === Criteria::DESC ||
+                $dir < 0
+                ? Criteria::DESC : Criteria::ASC;
         return $this;
     }
 

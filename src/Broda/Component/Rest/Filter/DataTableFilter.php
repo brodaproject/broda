@@ -26,11 +26,11 @@ class DataTableFilter extends AbstractFilter implements TotalizableInterface
     {
         $this->params = $request;
 
-        $this->firstResult = (int)$request['start'];
-        $this->maxResults = min(50, (int)$request['length'] ?: 30); // max 50 lines per request;
+        if (isset($request['start'])) $this->firstResult = (int)$request['start'];
+        if (isset($request['lenght'])) $this->maxResults = min(50, (int)$request['length'] ?: 30); // max 50 lines per request;
 
         $columns = empty($request['columns']) ? static::$defaultColumns : static::normalizeColumns($request['columns']);
-        $orders = $request['order'] ?: array();
+        $orders = isset($request['order']) ? $request['order'] : array();
 
         // defining columns and searchings
         $this->columns = $columns;

@@ -30,11 +30,9 @@ class DefaultFilter extends AbstractFilter
         // limits
         if (isset($params['start'])) {
             $this->firstResult = (int)$params['start'];
-            unset($params['start']); // apaga para nao ser confundido com campo no search individual
         }
         if (isset($params['len'])) {
             $this->maxResults = min(50, (int)$params['len']);
-            unset($params['len']); // apaga para nao ser confundido com campo no search individual
         }
 
         // orderings (order array query parameter)
@@ -48,15 +46,16 @@ class DefaultFilter extends AbstractFilter
                     $this->orderings = new Param\Ordering($this->getColumn($ord));
                 }
             }
-            unset($params['order']); // apaga para nao ser confundido com campo no search individual
         }
 
         // global search is the 's' query parameter
         if (isset($params['s']) && !$this->isEmpty($params['s'])) {
             $this->globalSearch = new Param\Searching($params['s'], false);
-            unset($params['s']); // apaga para nao ser confundido com campo no search individual
         }
 
+        // apaga para nao ser confundido com campo no search individual
+        unset($params['start'], $params['len'], $params['order'], $params['s']);
+        
         // columns search (other query parameters are column searches)
         foreach ($params as $col => $value) {
             // FIXME: pensar se este if realmente é legal ter aqui
