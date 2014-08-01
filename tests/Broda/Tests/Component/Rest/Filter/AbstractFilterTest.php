@@ -22,12 +22,8 @@ class AbstractFilterTest extends \PHPUnit_Framework_TestCase
 
     protected function setUp()
     {
-        $this->mockFilter = new AbstractFilterMock();
-    }
-
-    protected function tearDown()
-    {
         AbstractFilter::setDefaultColumns(array());
+        $this->mockFilter = new AbstractFilterMock();
     }
 
     public function testDefaults()
@@ -125,8 +121,8 @@ class AbstractFilterTest extends \PHPUnit_Framework_TestCase
         return array(
             array(Request::create('/', 'GET', array()), 'Broda\Component\Rest\Filter\NullFilter'),
             array(Request::create('/', 'GET', array('s'=>'foo search')), 'Broda\Component\Rest\Filter\DefaultFilter'),
-            array(Request::create('/', 'POST', array('draw' => 1)), 'Broda\Component\Rest\Filter\DataTableFilter'),
-            array(Request::create('/', 'POST', array('sEcho' => 1)), 'Broda\Component\Rest\Filter\DataTableLegacyFilter'),
+            //array(Request::create('/', 'POST', array('draw' => 1)), 'Broda\Component\Rest\Filter\DataTableFilter'),
+            //array(Request::create('/', 'POST', array('sEcho' => 1)), 'Broda\Component\Rest\Filter\DataTableLegacyFilter'),
         );
     }
 
@@ -163,6 +159,7 @@ class AbstractFilterTest extends \PHPUnit_Framework_TestCase
         $expCol2->setSubColumns(array(new Column('bar'), new Column('foo')));
 
         return array(
+            // strings
             array(
                 array('foo'),
                 array(new Column('foo'))
@@ -171,6 +168,7 @@ class AbstractFilterTest extends \PHPUnit_Framework_TestCase
                 array('foo', 'bar'),
                 array(new Column('foo'), new Column('bar'))
             ),
+            // arrays
             array(
                 array($col1),
                 array($expCol1)
@@ -178,6 +176,16 @@ class AbstractFilterTest extends \PHPUnit_Framework_TestCase
             array(
                 array($col2),
                 array($expCol2)
+            ),
+            // Column objects
+            array(
+                array($col3 = new Column('foobar')),
+                array($col3)
+            ),
+            // mixed
+            array(
+                array('foo', array('name'=>'bar'), $col4 = new Column('baz')),
+                array(new Column('foo'), new Column('bar'), $col4)
             ),
         );
     }
