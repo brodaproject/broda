@@ -10,6 +10,8 @@ use Broda\Component\Rest\Filter\TotalizableInterface;
 use Broda\Component\Rest\RestService;
 use Broda\Tests\Component\Rest\Fixtures\SerializableObject;
 use Doctrine\Common\Collections\Criteria;
+use Doctrine\ORM\QueryBuilder;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * @ group x
@@ -44,6 +46,16 @@ class RestServiceTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('foo', $object->prop);
     }
 
+    public function testCreateObjectFromRequest()
+    {
+        $request = Request::create('/', 'GET', array(), array(), array(), array(), '{"prop":"foo"}');
+        $request->headers->set('CONTENT_TYPE', 'application/json');
+        $object = $this->rest->createObjectFromRequest($request, 'Broda\Tests\Component\Rest\Fixtures\SerializableObject');
+
+        $this->assertInstanceOf('Broda\Tests\Component\Rest\Fixtures\SerializableObject', $object);
+        $this->assertEquals('foo', $object->prop);
+    }
+
     public function testFormatOutputWithObject()
     {
         $object = new SerializableObject();
@@ -51,7 +63,7 @@ class RestServiceTest extends \PHPUnit_Framework_TestCase
 
         $this->assertInternalType('string', $output);
         $this->assertJson($output);
-        $this->assertEquals($output, '{"prop":"value"}');
+        $this->assertEquals('{"prop":"value"}', $output);
     }
 
     public function testFormatOutputWithArrayOfObjects()
@@ -65,7 +77,13 @@ class RestServiceTest extends \PHPUnit_Framework_TestCase
 
         $this->assertInternalType('string', $output);
         $this->assertJson($output);
-        $this->assertEquals($output, '[{"prop":"value"},{"prop":"value"},{"prop":"value"}]');
+        $this->assertEquals('[{"prop":"value"},{"prop":"value"},{"prop":"value"}]', $output);
+    }
+
+    public function testIncorporateQueryBuider()
+    {
+        $qb = new QueryBuilder($this->getMock('Doctrine\ORM\EntityManager'));
+        
     }
 
     public function testFilteringCriteriaWithNoParams()
@@ -76,10 +94,10 @@ class RestServiceTest extends \PHPUnit_Framework_TestCase
         $emptyCriteria = Criteria::create();
 
         $this->assertInstanceOf('Doctrine\Common\Collections\Criteria', $criteria);
-        $this->assertEquals($criteria->getWhereExpression(), $emptyCriteria->getWhereExpression());
-        $this->assertEquals($criteria->getOrderings(), $emptyCriteria->getOrderings());
-        $this->assertNotEquals($criteria->getMaxResults(), $emptyCriteria->getMaxResults()); // emptyCriteria is null
-        $this->assertEquals($criteria->getMaxResults(), $filter->getMaxResults()); // NullFilter has a default value for maxresults
+        $this->assertEquals($emptyCriteria->getWhereExpression(), $criteria->getWhereExpression());
+        $this->assertEquals($emptyCriteria->getOrderings(),       $criteria->getOrderings());
+        $this->assertNotEquals($emptyCriteria->getMaxResults(),   $criteria->getMaxResults()); // emptyCriteria is null
+        $this->assertEquals($filter->getMaxResults(),             $criteria->getMaxResults()); // NullFilter has a default value for maxresults
     }
 
     public function testFilteringCriteriaWithOffsetSimple()
@@ -91,9 +109,9 @@ class RestServiceTest extends \PHPUnit_Framework_TestCase
                 ->setFirstResult(2);
 
         $this->assertInstanceOf('Doctrine\Common\Collections\Criteria', $criteria);
-        $this->assertEquals($criteria->getWhereExpression(), $emptyCriteria->getWhereExpression());
-        $this->assertEquals($criteria->getOrderings(), $emptyCriteria->getOrderings());
-        $this->assertEquals($criteria->getFirstResult(), $emptyCriteria->getFirstResult());
+        $this->assertEquals($emptyCriteria->getWhereExpression(), $criteria->getWhereExpression());
+        $this->assertEquals($emptyCriteria->getOrderings(),       $criteria->getOrderings());
+        $this->assertEquals($emptyCriteria->getFirstResult(),     $criteria->getFirstResult());
     }
 
     public function testFilteringCriteriaWithLimitSimple()
@@ -105,108 +123,53 @@ class RestServiceTest extends \PHPUnit_Framework_TestCase
                 ->setMaxResults(3);
 
         $this->assertInstanceOf('Doctrine\Common\Collections\Criteria', $criteria);
-        $this->assertEquals($criteria->getWhereExpression(), $emptyCriteria->getWhereExpression());
-        $this->assertEquals($criteria->getOrderings(), $emptyCriteria->getOrderings());
-        $this->assertEquals($criteria->getMaxResults(), $emptyCriteria->getMaxResults());
+        $this->assertEquals($emptyCriteria->getWhereExpression(), $criteria->getWhereExpression());
+        $this->assertEquals($emptyCriteria->getOrderings(),       $criteria->getOrderings());
+        $this->assertEquals($emptyCriteria->getMaxResults(),      $criteria->getMaxResults());
     }
 
-    public function testFilteringCriteriaWithSearchGlobalSimple()
+    public function testFilteringCriteriaWithOrderingSimple()
     {
-        $filter = new DefaultFilter(array('s' => 'jo'), array('name', 'age'));
+        $filter = new DefaultFilter(array('order' => 'name'), array('name', 'age'));
 
         $criteria = $this->rest->getFilteringCriteria($filter);
         $emptyCriteria = Criteria::create()
-                ->where(
-                        Criteria::expr()->orX(
-                            Criteria::expr()->contains('name', 'jo'),
-                            Criteria::expr()->contains('age', 'jo')
-                        )
-                );
+                ->orderBy(array('name' => Criteria::ASC));
 
         $this->assertInstanceOf('Doctrine\Common\Collections\Criteria', $criteria);
-        $this->assertEquals($criteria->getWhereExpression(), $emptyCriteria->getWhereExpression());
-        $this->assertEquals($criteria->getOrderings(), $emptyCriteria->getOrderings());
+        $this->assertEquals($emptyCriteria->getWhereExpression(), $criteria->getWhereExpression());
+        $this->assertEquals($emptyCriteria->getOrderings(),       $criteria->getOrderings());
     }
 
-    /**
-     * @todo não 'encavalar' mais expressoes iguais (deixa-las 'flat', usando CompositeExpression::getExpressionList())
-     */
-    public function testFilteringCriteriaWithSearchGlobalComplex()
+    public function testFilteringCriteriaWithOrderingComplex()
     {
-        $filter = new DefaultFilter(array('s' => 'jo'), array('name', 'age', 'surname'));
+        $filter = new DefaultFilter(array('order' => array('name', 'age')), array('name', 'age'));
 
         $criteria = $this->rest->getFilteringCriteria($filter);
         $emptyCriteria = Criteria::create()
-                ->where(
-                        Criteria::expr()->orX(
-                            Criteria::expr()->orX( // as expressoes iguais ficam 'encavaladas'
-                                Criteria::expr()->contains('name', 'jo'),
-                                Criteria::expr()->contains('age', 'jo')
-                            ),
-                            Criteria::expr()->contains('surname', 'jo')
-                        )
-                );
+                ->orderBy(array('name' => Criteria::ASC, 'age' => Criteria::ASC));
 
         $this->assertInstanceOf('Doctrine\Common\Collections\Criteria', $criteria);
-        $this->assertEquals($criteria->getWhereExpression(), $emptyCriteria->getWhereExpression());
-        $this->assertEquals($criteria->getOrderings(), $emptyCriteria->getOrderings());
-    }
-
-    public function testFilteringCriteriaWithSearchGlobalWithTokenSimple()
-    {
-        $filter = new DefaultFilter(array('s' => 'jo ma'), array('name', 'age'));
-
-        $criteria = $this->rest->getFilteringCriteria($filter);
-        $emptyCriteria = Criteria::create()
-                ->where(
-                        Criteria::expr()->orX(
-                            Criteria::expr()->andX(
-                                Criteria::expr()->contains('name', 'jo'),
-                                Criteria::expr()->contains('name', 'ma')
-                            ),
-                            Criteria::expr()->andX(
-                                Criteria::expr()->contains('age', 'jo'),
-                                Criteria::expr()->contains('age', 'ma')
-                            )
-                        )
-                );
-
-        $this->assertInstanceOf('Doctrine\Common\Collections\Criteria', $criteria);
-        $this->assertEquals($criteria->getWhereExpression(), $emptyCriteria->getWhereExpression());
-        $this->assertEquals($criteria->getOrderings(), $emptyCriteria->getOrderings());
+        $this->assertEquals($emptyCriteria->getWhereExpression(), $criteria->getWhereExpression());
+        $this->assertEquals($emptyCriteria->getOrderings(),       $criteria->getOrderings());
     }
 
     /**
-     * @todo não 'encavalar' mais expressoes iguais (deixa-las 'flat', usando CompositeExpression::getExpressionList())
+     * @dataProvider filteringCriteriaSearchsProvider
      */
-    public function testFilteringCriteriaWithSearchGlobalWithTokenComplex()
+    public function testFilteringCriteriaWithSearchs($searchs, $expectedCriteria)
     {
-        $filter = new DefaultFilter(array('s' => 'jo ma'), array('name', 'age', 'surname'));
+        $columns = array(
+            array('name' => 'name'),
+            array('name' => 'age'),
+            array('name' => 'surname', 'subcolumns' => array('name')),
+        );
+        $filter = new DefaultFilter($searchs, $columns);
 
         $criteria = $this->rest->getFilteringCriteria($filter);
-        $emptyCriteria = Criteria::create()
-                ->where(
-                        Criteria::expr()->orX(
-                            Criteria::expr()->orX( // as expressoes iguais ficam 'encavaladas'
-                                Criteria::expr()->andX(
-                                    Criteria::expr()->contains('name', 'jo'),
-                                    Criteria::expr()->contains('name', 'ma')
-                                ),
-                                Criteria::expr()->andX(
-                                    Criteria::expr()->contains('age', 'jo'),
-                                    Criteria::expr()->contains('age', 'ma')
-                                )
-                            ),
-                            Criteria::expr()->andX(
-                                Criteria::expr()->contains('surname', 'jo'),
-                                Criteria::expr()->contains('surname', 'ma')
-                            )
-                        )
-                );
 
         $this->assertInstanceOf('Doctrine\Common\Collections\Criteria', $criteria);
-        $this->assertEquals($criteria->getWhereExpression(), $emptyCriteria->getWhereExpression());
-        $this->assertEquals($criteria->getOrderings(), $emptyCriteria->getOrderings());
+        $this->assertEquals($expectedCriteria->getWhereExpression(), $criteria->getWhereExpression());
     }
 
     /**
@@ -228,14 +191,177 @@ class RestServiceTest extends \PHPUnit_Framework_TestCase
         }
     }
 
+    /**
+     * @expectedException \UnexpectedValueException
+     */
+    public function testFilterInvalidArgument()
+    {
+        $this->rest->filter('invalid data', new NullFilter);
+    }
+
+    public function filteringCriteriaSearchsProvider()
+    {
+        return array(
+            // global simple
+            array(
+                array('s' => 'jo'),
+                Criteria::create()
+                    ->where(
+                        Criteria::expr()->orX(
+                            Criteria::expr()->contains('name', 'jo'),
+                            Criteria::expr()->contains('age', 'jo'),
+                            Criteria::expr()->contains('surname', 'jo') // subcolumns ignore globalsearch
+                        )
+                    )
+            ),
+            // global complex (token)
+            array(
+                array('s' => 'jo ma'),
+                Criteria::create()
+                    ->where(
+                        Criteria::expr()->orX(
+                            Criteria::expr()->andX( // customizavel
+                                Criteria::expr()->contains('name', 'jo'),
+                                Criteria::expr()->contains('name', 'ma')
+                            ),
+                            Criteria::expr()->andX( // customizavel
+                                Criteria::expr()->contains('age', 'jo'),
+                                Criteria::expr()->contains('age', 'ma')
+                            ),
+                            Criteria::expr()->andX( // customizavel
+                                Criteria::expr()->contains('surname', 'jo'), // subcolumns ignore globalsearch
+                                Criteria::expr()->contains('surname', 'ma')
+                            )
+                        )
+                    )
+            ),
+            // single simple
+            array(
+                array('name' => 'jo'),
+                Criteria::create()
+                    ->where(
+                        Criteria::expr()->contains('name', 'jo')
+                    )
+            ),
+            // single complex (token)
+            array(
+                array('name' => 'jo ma'),
+                Criteria::create()
+                    ->where(
+                        Criteria::expr()->andX( // customizavel
+                            Criteria::expr()->contains('name', 'jo'),
+                            Criteria::expr()->contains('name', 'ma')
+                        )
+                    )
+            ),
+            // mixed single simple and complex (token)
+            array(
+                array('name' => 'jo ma', 'age' => '12'),
+                Criteria::create()
+                    ->where(
+                        Criteria::expr()->andX(
+                            Criteria::expr()->andX( // customizavel
+                                Criteria::expr()->contains('name', 'jo'),
+                                Criteria::expr()->contains('name', 'ma')
+                            ),
+                            Criteria::expr()->contains('age', '12')
+                        )
+                    )
+            ),
+            // mixed single simple and global simple (should intersect)
+            array(
+                array('s' => 'jo', 'name' => 'ma'),
+                Criteria::create()
+                    ->where(
+                        Criteria::expr()->andX(
+                            Criteria::expr()->orX(
+                                Criteria::expr()->contains('name', 'jo'),
+                                Criteria::expr()->contains('age', 'jo'),
+                                Criteria::expr()->contains('surname', 'jo')
+                            ),
+                            Criteria::expr()->contains('name', 'ma')
+                        )
+                    )
+            ),
+            // subcolumns simple
+            // should put together the column itself and his subcolumns with OR composition type
+            array(
+                array('surname' => 'ma'),
+                Criteria::create()
+                    ->where(
+                        Criteria::expr()->orX(
+                            Criteria::expr()->contains('surname', 'ma'),
+                            Criteria::expr()->contains('name', 'ma')
+                        )
+                    )
+            ),
+
+            // subcolumns simple mixed with column simple
+            // should treat subcolumns expression as a normal column, composing with AND
+            array(
+                array('name' => 'jo', 'surname' => 'ma'),
+                Criteria::create()
+                    ->where(
+                        Criteria::expr()->andX(
+                            Criteria::expr()->contains('name', 'jo'),
+                            Criteria::expr()->orX(
+                                Criteria::expr()->contains('surname', 'ma'),
+                                Criteria::expr()->contains('name', 'ma')
+                            )
+                        )
+                    )
+            ),
+            // subcolumns simple mixed with column simple, with inverted order
+            // should consider order
+            array(
+                array('surname' => 'ma', 'name' => 'jo'),
+                Criteria::create()
+                    ->where(
+                        Criteria::expr()->andX(
+                            Criteria::expr()->orX(
+                                Criteria::expr()->contains('surname', 'ma'),
+                                Criteria::expr()->contains('name', 'ma')
+                            ),
+                            Criteria::expr()->contains('name', 'jo')
+                        )
+                    )
+            ),
+
+            // subcolumns simple mixed with column simple and global search simple
+            // the order is: global first and the order that cames from filter
+            array(
+                array('name' => 'jo', 'surname' => 'ma', 's' => 'a'),
+                Criteria::create()
+                    ->where(
+                        Criteria::expr()->andX(
+                            Criteria::expr()->orX(
+                                Criteria::expr()->contains('name', 'a'),
+                                Criteria::expr()->contains('age', 'a'),
+                                Criteria::expr()->contains('surname', 'a') // global ignores subcolumns
+                            ),
+                            Criteria::expr()->andX(
+                                Criteria::expr()->contains('name', 'jo'),
+                                Criteria::expr()->orX(
+                                    Criteria::expr()->contains('surname', 'ma'),
+                                    Criteria::expr()->contains('name', 'ma')
+                                )
+                            )
+                        )
+                    )
+            ),
+        );
+    }
+
     public function filterProvider()
     {
         AbstractFilter::setDefaultColumns(array('name', 'age'));
         return array(
             array(new DefaultFilter(array('s' => 'jo'))),
+            array(new DefaultFilter(array('name' => 'jo'))),
             array(new DataTableFilter(array('search' => 'jo', 'draw' => 1))),
         );
     }
+
 
 }
 

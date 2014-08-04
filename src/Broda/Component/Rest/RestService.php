@@ -3,12 +3,12 @@
 namespace Broda\Component\Rest;
 
 use Broda\Component\Rest\Filter\Expr as FilterExpr;
-use Broda\Component\Rest\Filter\Param as FilterParam;
 use Broda\Component\Rest\Filter\FilterInterface;
+use Broda\Component\Rest\Filter\Param as FilterParam;
 use Broda\Component\Rest\Filter\TotalizableInterface;
-
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Criteria;
+use Doctrine\Common\Collections\Expr\CompositeExpression;
 use Doctrine\Common\Collections\Selectable;
 use Doctrine\ORM\QueryBuilder;
 use JMS\Serializer\Serializer;
@@ -85,6 +85,8 @@ class RestService
      * Todos os pós-filtros serão adicionados ao QueryBuilder. Depois, basta
      * usar o {@link filter} para retornar os dados.
      *
+     * @see \Doctrine\ORM\QueryBuider::addCriteria()
+     *
      * @param QueryBuilder $qb
      * @param FilterInterface $filter
      * @param array $fieldMap
@@ -121,6 +123,21 @@ class RestService
         return $qb;
     }
 
+    private function createCompositeExpression($type, array $exprs)
+    {
+        switch (count($exprs)) {
+            case 0:
+                return null;
+            case 1:
+                return $exprs[0];
+            default:
+                foreach ($exprs as $expr) {
+                    if (null === $expr) return null;
+                }
+                return new CompositeExpression($type, $exprs);
+        }
+    }
+
     /**
      * Retorna o/um Criteria com os pósfiltros do FilterInterface.
      *
@@ -142,29 +159,40 @@ class RestService
         $length = $filter->getMaxResults(); // max 50 lines per request
 
         // defining search especific columns
-        $searchExpr = null;
+        $searchExprs = array();
         foreach ($columnSearchs as $col) {
             /* @var $col FilterParam\Searching */
             $field = $col->getColumnName();
 
-            $searchColExpr = null;
+            $searchColExprs = array();
             foreach ($col->getTokens() as $search) {
-                if (!isset($searchColExpr)) {
-                    $searchColExpr = $expr->contains($field, $search);
+
+                $column = $filter->getColumn($field);
+                if ($column && count($subcols = $column->getSubColumns())) {
+                    // with subcolumns
+
+                    $searchSubColExprs = array();
+                    $searchSubColExprs[] = $expr->contains($field, $search); // self col ...
+                    foreach ($subcols as $subcol) {
+                        /* @var $subcol FilterParam\Column */
+                        $subfield = $subcol->getName();
+                        $searchSubColExprs[] = $expr->contains($subfield, $search); // .. and his subcolumns
+                    }
+
+                    $searchColExprs[] = $this->createCompositeExpression(CompositeExpression::TYPE_OR, $searchSubColExprs);
                 } else {
-                    $searchColExpr = $expr->andX($searchColExpr, $expr->contains($field, $search));
+                    // no subcolumns
+                    $searchColExprs[] = $expr->contains($field, $search);
                 }
             }
 
-            if (!isset($searchExpr)) {
-                $searchExpr = $searchColExpr;
-            } else {
-                $searchExpr = $expr->andX($searchExpr, $searchColExpr);
-            }
+            $searchExprs[] = $this->createCompositeExpression(CompositeExpression::TYPE_AND /* TODO: deixar essa opção customizavel*/, $searchColExprs);
+
         }
+        $searchExpr = $this->createCompositeExpression(CompositeExpression::TYPE_AND, $searchExprs);
 
         // defining search all
-        $searchAllExpr = null;
+        $searchAllExprs = array();
         if (null !== $globalSearch) {
 
             foreach ($columns as $col) {
@@ -173,22 +201,15 @@ class RestService
 
                 if (!$col->getSearchable()) continue;
 
-                $searchColExpr = null;
+                $searchColExprs = array();
                 foreach ($globalSearch->getTokens() as $search) {
-                    if (!isset($searchColExpr)) {
-                        $searchColExpr = $expr->contains($field, $search);
-                    } else {
-                        $searchColExpr = $expr->andX($searchColExpr, $expr->contains($field, $search));
-                    }
+                    $searchColExprs[] = $expr->contains($field, $search);
                 }
 
-                if (!isset($searchAllExpr)) {
-                    $searchAllExpr = $searchColExpr;
-                } else {
-                    $searchAllExpr = $expr->orX($searchAllExpr, $searchColExpr);
-                }
+                $searchAllExprs[] = $this->createCompositeExpression(CompositeExpression::TYPE_AND /* TODO: deixar essa opção customizavel*/, $searchColExprs);
             }
         }
+        $searchAllExpr = $this->createCompositeExpression(CompositeExpression::TYPE_OR, $searchAllExprs);
 
         // defining orderings
         $orderings = array();
@@ -203,8 +224,8 @@ class RestService
         }
 
         // mount criteria
-        if (count($searchAllExpr)) $criteria->andWhere($searchAllExpr);
-        if (count($searchExpr)) $criteria->andWhere($searchExpr);
+        if (null !== $searchAllExpr) $criteria->andWhere($searchAllExpr);
+        if (null !== $searchExpr) $criteria->andWhere($searchExpr);
         if (count($orderings)) $criteria->orderBy($orderings);
         $criteria->setFirstResult($start);
         $criteria->setMaxResults($length);

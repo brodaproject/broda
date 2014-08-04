@@ -43,7 +43,7 @@ class DefaultFilter extends AbstractFilter
 
             foreach ($params['order'] as $ord) {
                 if ($this->hasColumn($ord)) {
-                    $this->orderings = new Param\Ordering($this->getColumn($ord));
+                    $this->orderings[] = new Param\Ordering($this->getColumn($ord));
                 }
             }
         }
@@ -55,7 +55,7 @@ class DefaultFilter extends AbstractFilter
 
         // apaga para nao ser confundido com campo no search individual
         unset($params['start'], $params['len'], $params['order'], $params['s']);
-        
+
         // columns search (other query parameters are column searches)
         foreach ($params as $col => $value) {
             // FIXME: pensar se este if realmente é legal ter aqui
