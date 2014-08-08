@@ -288,6 +288,7 @@ class RestService
             $qbCount = clone $qb;
             $qbCount->select($qbCount->expr()->count($rootAliases[0]));
             $qbCount->setFirstResult(null)->setMaxResults(null);
+            $qbCount->resetDQLParts(array('orderBy'));
 
             $filter->setTotalRecords($qbCount->getQuery()->getSingleScalarResult());
             unset($qbCount);

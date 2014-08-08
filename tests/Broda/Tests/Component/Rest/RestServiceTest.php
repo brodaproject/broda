@@ -82,8 +82,8 @@ class RestServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testIncorporateQueryBuider()
     {
-        $qb = new QueryBuilder($this->getMock('Doctrine\ORM\EntityManager'));
-        
+        //$qb = new QueryBuilder($this->getMock('Doctrine\ORM\EntityManager'));
+
     }
 
     public function testFilteringCriteriaWithNoParams()
