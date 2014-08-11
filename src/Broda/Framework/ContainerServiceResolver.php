@@ -8,11 +8,11 @@ class ContainerServiceResolver
 {
     const SERVICE_PATTERN = "/[A-Za-z0-9\._\-]+:[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*/";
 
-    private $container;
+    private $sc;
 
     public function __construct(Container $container)
     {
-        $this->container = $container;
+        $this->sc = $container;
     }
 
     /**
@@ -40,11 +40,11 @@ class ContainerServiceResolver
     {
         list($service, $method) = explode(':', $name, 2);
 
-        if (!isset($this->container[$service])) {
+        if (!isset($this->sc[$service])) {
             throw new \InvalidArgumentException(sprintf('Service "%s" does not exist.', $service));
         }
 
-        return array($this->container[$service], $method);
+        return array($this->sc[$service], $method);
     }
 
     /**
