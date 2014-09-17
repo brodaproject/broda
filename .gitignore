@@ -1,6 +1,10 @@
 /nbproject/
+/.idea/
+/.settings/
 /bower_components/
 /vendor/
 /web/
 /var/
 composer.lock
+.buildpath
+.project

@@ -40,13 +40,13 @@ class AnnotationServiceProvider implements ServiceProviderInterface
         }
     }
 
-    public function register(Container $app)
+    public function register(Container $sc)
     {
-        $app['annotation.cache'] = function () use ($app) {
+        $sc['annotation.cache'] = function () {
             return new ArrayCache();
         };
 
-        $app['annotation.reader'] = function () use ($app) {
+        $sc['annotation.reader'] = function () {
             return new AnnotationReader();
         };
     }

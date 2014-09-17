@@ -29,28 +29,44 @@ class FrameworkExtraProvider implements ServiceProviderInterface
         }
 
         $provider = $this;
-        $sc->extend('dispatcher',
-                function ($dispatcher) use ($sc, $provider) {
+        $sc->extend('dispatcher', function ($dispatcher) use ($sc, $provider) {
             $provider->subscribe($sc, $dispatcher);
             return $dispatcher;
         });
 
-        $sc['converter.auto_convert'] = true;
-        $sc['converter_manager'] = function ($sc) {
+        $sc['extra.paramconverter.auto_convert'] = true;
+        $sc['extra.paramconverter.manager'] = function ($sc) {
             $converterManager = new ParamConverterManager();
             if (isset($sc['doctrine.registry'])) {
-                $converterManager->add(new DoctrineParamConverter($sc['doctrine.registry']));
+                $converterManager->add(new DoctrineParamConverter($sc['doctrine.registry']), 10, 'doctrine.orm');
             }
-            $converterManager->add(new DateTimeParamConverter());
+            $converterManager->add(new DateTimeParamConverter(), -5, 'datetime');
+            return $converterManager;
         };
+
+        $sc['extra.controller_listener'] = function ($sc) {
+            return new ControllerListener($sc['annotation.reader']);
+        };
+
+        $sc['extra.paramconverter_listener'] = function ($sc) {
+            return new ParamConverterListener($sc['extra.paramconverter.manager'], $sc['extra.paramconverter.auto_convert']);
+        };
+
+        $sc['extra.httpcache_listener'] = function () {
+            return new HttpCacheListener();
+        };
+
+        /*$sc['extra.security_listener'] = function ($sc) {
+            return new SecurityListener();
+        };*/
     }
 
     public function subscribe(Container $sc, EventDispatcherInterface $dispatcher)
     {
-        $dispatcher->addSubscriber(new ControllerListener($sc['annotation.reader']));
-        $dispatcher->addSubscriber(new ParamConverterListener($sc['converter_manager'], $sc['converter.auto_convert']));
-        $dispatcher->addSubscriber(new HttpCacheListener());
-        //$dispatcher->addSubscriber(new SecurityListener());
+        $dispatcher->addSubscriber($sc['extra.controller_listener']);
+        $dispatcher->addSubscriber($sc['extra.paramconverter_listener']);
+        $dispatcher->addSubscriber($sc['extra.httpcache_listener']);
+        //$dispatcher->addSubscriber($sc['extra.security_listener']);
     }
 
 }

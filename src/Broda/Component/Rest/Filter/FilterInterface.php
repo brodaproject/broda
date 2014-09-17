@@ -48,6 +48,20 @@ interface FilterInterface
     public function getColumns();
 
     /**
+     * Retorna a coluna.
+     *
+     * @param $columnName
+     * @return Param\Column
+     */
+    public function getColumn($columnName);
+
+    /**
+     * @param $columnName
+     * @return boolean
+     */
+    public function hasColumn($columnName);
+
+    /**
      * @return Param\Ordering[]
      */
     public function getOrderings();
@@ -71,6 +85,17 @@ interface FilterInterface
      * @return Param\Searching[]
      */
     public function getColumnSearchs();
+
+    /**
+     *
+     * @return self
+     */
+    public function clearSearchs();
+
+    /**
+     * @return self
+     */
+    public function clearLimits();
 
     /**
      * Retorna o response da forma que o filtro do lado cliente entenda.

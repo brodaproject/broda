@@ -33,7 +33,9 @@ class AbstractFilterTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(array(), $this->mockFilter->getOrderings());
         $this->assertNull($this->mockFilter->getGlobalSearch());
         $this->assertEquals(0, $this->mockFilter->getFirstResult());
-        $this->assertEquals(30, $this->mockFilter->getMaxResults());
+        //$this->assertEquals(30, $this->mockFilter->getMaxResults());
+        // since 17/09/2014: maxResults is null by default
+        $this->assertNull($this->mockFilter->getMaxResults());
     }
 
     public function testGetColumns()

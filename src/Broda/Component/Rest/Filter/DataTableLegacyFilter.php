@@ -53,6 +53,8 @@ class DataTableLegacyFilter extends DataTableFilter
         foreach ($data as $i => $o) {
             if (is_numeric($i)) {
                 // datatables 1.9.4
+                // é necessário converter pois algumas versões do dt
+                // passam um objeto em vez de um array (bug)
                 if (is_array($o)) {
                     $o = (object) $o;
                 }
@@ -82,6 +84,7 @@ class DataTableLegacyFilter extends DataTableFilter
     /**
      * Auxiliar para normalizar os orders
      *
+     * @internal
      * @param array $data
      * @return array
      */
@@ -102,6 +105,7 @@ class DataTableLegacyFilter extends DataTableFilter
     /**
      * Auxiliar para normalizar os columns
      *
+     * @internal
      * @param array $data
      * @return array
      */
