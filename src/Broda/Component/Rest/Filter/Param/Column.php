@@ -94,7 +94,7 @@ class Column
 
     public function setSubColumns(array $subColumns)
     {
-        if (!($col = reset($subColumns)) instanceof Column) {
+        if (count($subColumns) && !($col = reset($subColumns)) instanceof Column) {
             throw new \InvalidArgumentException(sprintf('Only %s are acceptable, '
                     . '%s given', get_class($this), gettype($col)));
         }

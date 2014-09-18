@@ -109,9 +109,34 @@ abstract class AbstractFilter implements FilterInterface
     /**
      * {@inheritdoc}
      */
+    public function setColumns(array $columns)
+    {
+        $onlyColumns = array_filter($columns, function ($elem) {
+            return ($elem instanceof Column);
+        });
+        $this->columns = $onlyColumns;
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function getColumnSearchs()
     {
         return $this->columnSearchs;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setColumnSearchs(array $columnSearchs)
+    {
+        $onlyColumns = array_filter($columnSearchs, function ($elem) {
+            // somente searchs que possuem nome de coluna
+            return ($elem instanceof Searching) && null !== $elem->getColumnName();
+        });
+        $this->columnSearchs = $onlyColumns;
+        return $this;
     }
 
     /**
@@ -125,9 +150,27 @@ abstract class AbstractFilter implements FilterInterface
     /**
      * {@inheritdoc}
      */
+    public function setFirstResult($firstResult)
+    {
+        $this->firstResult = null === $firstResult ? $firstResult : (int)$firstResult;
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function getGlobalSearch()
     {
         return $this->globalSearch;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setGlobalSearch(Searching $globalSearch)
+    {
+        $this->globalSearch = $globalSearch;
+        return $this;
     }
 
     /**
@@ -139,11 +182,35 @@ abstract class AbstractFilter implements FilterInterface
     }
 
     /**
+     * TODO: doc
+     *
+     * @param int $maxResults
+     * @return self
+     */
+    public function setMaxResults($maxResults)
+    {
+        $this->maxResults = null === $maxResults ? $maxResults : (int)$maxResults;
+        return $this;
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function getOrderings()
     {
         return $this->orderings;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setOrderings(array $orderings)
+    {
+        $onlyOrderings = array_filter($orderings, function ($elem) {
+            return ($elem instanceof Ordering);
+        });
+        $this->orderings = $onlyOrderings;
+        return $this;
     }
 
     /**
@@ -252,44 +319,5 @@ abstract class AbstractFilter implements FilterInterface
         }
 
         return new NullFilter; // impossible to detect
-    }
-
-    public static function createFromFilter($filterClass, FilterInterface $filter)
-    {
-        $refl = new \ReflectionClass($filterClass);
-        if (!$refl->implementsInterface('Broda\Component\Rest\Filter\FilterInterface')) {
-            throw new \LogicException('Precisa ser um FilterInterface');
-        }
-
-        // instanciate without call constructor
-        if (method_exists($refl, 'newInstanceWithoutConstructor')) {
-            $newFilter = $refl->newInstanceWithoutConstructor();
-        } else {
-            $serializedString = sprintf(
-                'O:%d:"%s":0:{}',
-                strlen($filterClass),
-                $filterClass
-            );
-
-            $newFilter = unserialize($serializedString);
-        }
-
-        /* @var $newFilter FilterInterface */
-        foreach ($refl->getProperties() as $property) {
-            switch ($name = $property->getName()) {
-                case 'columns':
-                case 'orderings':
-                case 'globalSearch':
-                case 'columnSearchs':
-                case 'firstResult':
-                case 'maxResults':
-                    $value = $filter->{'get'.$name}();
-                    $property->setAccessible(true);
-                    $property->setValue($newFilter, $value);
-                    break;
-            }
-        }
-
-        return $newFilter;
     }
 }

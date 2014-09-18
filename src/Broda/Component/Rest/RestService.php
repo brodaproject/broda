@@ -5,11 +5,9 @@ namespace Broda\Component\Rest;
 use Broda\Component\Rest\Filter\Expr as FilterExpr;
 use Broda\Component\Rest\Filter\FilterInterface;
 use Broda\Component\Rest\Filter\Incorporator\IncorporatorFactory;
+use Broda\Component\Rest\Filter\Incorporator\IncorporatorInterface;
 use Broda\Component\Rest\Filter\Param as FilterParam;
 use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Selectable;
-use Doctrine\ORM\QueryBuilder as OrmQueryBuilder;
-use Doctrine\DBAL\Query\QueryBuilder as DbalQueryBuilder;
 use JMS\Serializer\Serializer;
 use JMS\Serializer\SerializerBuilder;
 use Symfony\Component\HttpFoundation\Request;
@@ -21,35 +19,6 @@ use Symfony\Component\HttpFoundation\Request;
  */
 class RestService
 {
-
-    /**
-     * Neste modo, os Totalizables irão fazer 2 SELECTs: um para retornar
-     * o total de registros sem filtragem e sem limitação de paginação,
-     * e outro para retornar o total de registros sem limitação, com filtragem.
-     *
-     * É um modo mais lento, evite se possível.
-     */
-    const TOTALIZABLE_ALL = 100;
-
-    /**
-     * Neste modo, os Totalizables irão fazer apenas 1 SELECT, para
-     * retornar o total de registros sem limitação de paginação, mas
-     * com filtragem, e o total sem filtragem será substituido por este.
-     *
-     * É o padrão, porém alguns plugins como DataTables não irá
-     * funcionar o 'totalFiltered'.
-     */
-    const TOTALIZABLE_ONLY_FILTERED = 101;
-
-    /**
-     * Neste modo, os Totalizables não farão nenhum SELECT a mais,
-     * e retornarão uma previsão de quantos registros tem na tabela
-     * baseados nas limitações de paginação.
-     *
-     * Use quando não interessa mostrar o total de registros ou
-     * quando a tabela conter muitos registros.
-     */
-    const TOTALIZABLE_UNKNOWN = 102;
 
     /**
      *
@@ -69,27 +38,12 @@ class RestService
     protected $incorporatorFactory;
 
     /**
-     * Total de registros que o repositório contém.
-     *
-     * Só é usado para filters que implementam {@link TotalizableInterface}.
-     * Serve como um cache para evitar que sejam feitos 2 querys
-     * somente para retornar o número de registros filtrados e o número de
-     * registros limitados e filtrados.
-     *
-     * Defina este valor se você tem certeza quantos registros tem na tabela
-     * de antemão.
-     *
-     * @var int
-     */
-    private $totalRecords = null;
-
-    /**
      * Defina para TRUE para evitar que sejam feitos 2 querys no banco
      * pra trazer o total quando o filter implementar {@link TotalizableInterface}
      *
      * @var int
      */
-    private $totalizableMode = self::TOTALIZABLE_ALL;
+    private $totalizableMode = IncorporatorInterface::TOTALIZABLE_ALL;
 
     /**
      * Constructor.
@@ -110,12 +64,6 @@ class RestService
     public function getTotalizableMode()
     {
         return $this->totalizableMode;
-    }
-
-    public function setTotalRecords($total)
-    {
-        $this->totalRecords = (int)$total;
-        return $this;
     }
 
     /**
@@ -192,7 +140,7 @@ class RestService
     /**
      * Filters a collection and return data filtered by request
      *
-     * @param Selectable|OrmQueryBuilder|DbalQueryBuilder|array $collection
+     * @param mixed $collection
      * @param FilterInterface $filter
      * @param array $fieldMap
      * @return array

@@ -92,7 +92,6 @@ class RestServiceTest extends \PHPUnit_Framework_TestCase
     public function testFilteringCriteriaWithNoParams()
     {
         $this->markTestSkipped('Até mudar tudo para o Incorporator, repensar se vai poder pegar o criteria direto');
-        return;
 
         $filter = new NullFilter();
 
@@ -111,7 +110,6 @@ class RestServiceTest extends \PHPUnit_Framework_TestCase
     public function testFilteringCriteriaWithOffsetSimple()
     {
         $this->markTestSkipped('Até mudar tudo para o Incorporator, repensar se vai poder pegar o criteria direto');
-        return;
 
         $filter = new DefaultFilter(array('start' => 2));
 
@@ -128,7 +126,6 @@ class RestServiceTest extends \PHPUnit_Framework_TestCase
     public function testFilteringCriteriaWithLimitSimple()
     {
         $this->markTestSkipped('Até mudar tudo para o Incorporator, repensar se vai poder pegar o criteria direto');
-        return;
 
         $filter = new DefaultFilter(array('len' => 3));
 
@@ -145,7 +142,6 @@ class RestServiceTest extends \PHPUnit_Framework_TestCase
     public function testFilteringCriteriaWithOrderingSimple()
     {
         $this->markTestSkipped('Até mudar tudo para o Incorporator, repensar se vai poder pegar o criteria direto');
-        return;
 
         $filter = new DefaultFilter(array('order' => 'name'), array('name', 'age'));
 
@@ -161,7 +157,6 @@ class RestServiceTest extends \PHPUnit_Framework_TestCase
     public function testFilteringCriteriaWithOrderingComplex()
     {
         $this->markTestSkipped('Até mudar tudo para o Incorporator, repensar se vai poder pegar o criteria direto');
-        return;
 
         $filter = new DefaultFilter(array('order' => array('name', 'age')), array('name', 'age'));
 
@@ -180,7 +175,6 @@ class RestServiceTest extends \PHPUnit_Framework_TestCase
     public function testFilteringCriteriaWithSearchs($searchs, $expectedCriteria)
     {
         $this->markTestSkipped('Até mudar tudo para o Incorporator, repensar se vai poder pegar o criteria direto');
-        return;
 
         $columns = array(
             array('name' => 'name'),

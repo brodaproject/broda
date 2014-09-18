@@ -5,7 +5,6 @@ namespace Broda\Component\Rest\Filter\Incorporator;
 use Broda\Component\Rest\Filter\Expr\DbalQueryExpressionVisitor;
 use Broda\Component\Rest\Filter\FilterInterface;
 use Broda\Component\Rest\Filter\TotalizableInterface;
-use Broda\Component\Rest\RestService;
 
 use Doctrine\DBAL\Query\QueryBuilder;
 
@@ -25,8 +24,8 @@ class DbalQueryBuilderIncorporator extends SelectableIncorporator
         if ($filter instanceof TotalizableInterface) {
 
             switch ($totalizableMode = $this->rest->getTotalizableMode()) {
-                case RestService::TOTALIZABLE_ALL:
-                case RestService::TOTALIZABLE_ONLY_FILTERED:
+                case self::TOTALIZABLE_ALL:
+                case self::TOTALIZABLE_ONLY_FILTERED:
 
                     $qbFilteredCount = clone $qb;
                     $qbFilteredCount->select('count(*)');
@@ -35,7 +34,7 @@ class DbalQueryBuilderIncorporator extends SelectableIncorporator
 
                     $totalFiltered = $qbFilteredCount->execute()->fetchColumn(0);
 
-                    if ($totalizableMode === RestService::TOTALIZABLE_ALL) {
+                    if ($totalizableMode === self::TOTALIZABLE_ALL) {
                         // faz mais um SELECT pra pegar o total de registros sem filtragem (EXPENSIVE!)
 
                         $qbFilteredCount = clone $qb;
@@ -53,7 +52,7 @@ class DbalQueryBuilderIncorporator extends SelectableIncorporator
                     $filter->setTotalRecords($total, $totalFiltered);
                     unset($qbFilteredCount);
                     break;
-                case RestService::TOTALIZABLE_UNKNOWN:
+                case self::TOTALIZABLE_UNKNOWN:
                     $filter->setTotalRecords(
                         $filter->getFirstResult() + $filter->getMaxResults() + 1
                     );

@@ -9,9 +9,12 @@ use Broda\Component\Rest\RestService;
 class IncorporatorFactory
 {
     private static $incorporators = array(
-        'Doctrine\ORM\QueryBuilder' => 'Broda\Component\Rest\Filter\Incorporator\OrmQueryBuilderIncorporator',
-        'Doctrine\DBAL\Query\QueryBuilder' => 'Broda\Component\Rest\Filter\Incorporator\DbalQueryBuilderIncorporator',
-        'Doctrine\Common\Collections\Selectable' => 'Broda\Component\Rest\Filter\Incorporator\SelectableIncorporator',
+        'Doctrine\ORM\QueryBuilder' =>
+            'Broda\Component\Rest\Filter\Incorporator\OrmQueryBuilderIncorporator',
+        'Doctrine\DBAL\Query\QueryBuilder' =>
+            'Broda\Component\Rest\Filter\Incorporator\DbalQueryBuilderIncorporator',
+        'Doctrine\Common\Collections\Selectable' =>
+            'Broda\Component\Rest\Filter\Incorporator\SelectableIncorporator',
     );
 
     /**

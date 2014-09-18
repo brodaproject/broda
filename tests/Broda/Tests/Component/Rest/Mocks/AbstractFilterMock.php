@@ -3,6 +3,7 @@
 namespace Broda\Tests\Component\Rest\Mocks;
 
 use Broda\Component\Rest\Filter\AbstractFilter;
+use Broda\Component\Rest\Filter\FilterInterface;
 
 /**
  * Classe AbstractFilterMock
@@ -17,34 +18,43 @@ class AbstractFilterMock extends AbstractFilter
         $this->columns = self::$defaultColumns;
     }
 
-    function setColumns(array $columns)
+    public static function createFromFilter($filterClass, FilterInterface $filter)
     {
-        $this->columns = $columns;
-    }
+        $refl = new \ReflectionClass($filterClass);
+        if (!$refl->implementsInterface('Broda\Component\Rest\Filter\FilterInterface')) {
+            throw new \LogicException('Precisa ser um FilterInterface');
+        }
 
-    function setColumnSearchs(array $columns)
-    {
-        $this->columnSearchs = $columns;
-    }
+        // instanciate without call constructor
+        if (method_exists($refl, 'newInstanceWithoutConstructor')) {
+            $newFilter = $refl->newInstanceWithoutConstructor();
+        } else {
+            $serializedString = sprintf(
+                'O:%d:"%s":0:{}',
+                strlen($filterClass),
+                $filterClass
+            );
 
-    function setFirstResult($num)
-    {
-        $this->firstResult = $num;
-    }
+            $newFilter = unserialize($serializedString);
+        }
 
-    function setMaxResults($num)
-    {
-        $this->maxResults = $num;
-    }
+        /* @var $newFilter FilterInterface */
+        foreach ($refl->getProperties() as $property) {
+            switch ($name = $property->getName()) {
+                case 'columns':
+                case 'orderings':
+                case 'globalSearch':
+                case 'columnSearchs':
+                case 'firstResult':
+                case 'maxResults':
+                    $value = $filter->{'get'.$name}();
+                    $property->setAccessible(true);
+                    $property->setValue($newFilter, $value);
+                    break;
+            }
+        }
 
-    function setGlobalSearch($search)
-    {
-        $this->globalSearch = $search;
-    }
-
-    function setOrderings(array $orders)
-    {
-        $this->orderings = $orders;
+        return $newFilter;
     }
 
 }

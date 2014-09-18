@@ -5,7 +5,7 @@ namespace Broda\Component\Rest\Filter\Incorporator;
 use Broda\Component\Rest\Filter\Param as FilterParam;
 use Broda\Component\Rest\Filter\FilterInterface;
 use Broda\Component\Rest\Filter\TotalizableInterface;
-use Broda\Component\Rest\RestService;
+
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\Common\Collections\Expr\CompositeExpression;
 use Doctrine\Common\Collections\Selectable;
@@ -20,15 +20,15 @@ class SelectableIncorporator extends AbstractIncorporator
         if ($filter instanceof TotalizableInterface) {
 
             switch ($totalizableMode = $this->rest->getTotalizableMode()) {
-                case RestService::TOTALIZABLE_ALL:
-                case RestService::TOTALIZABLE_ONLY_FILTERED:
+                case self::TOTALIZABLE_ALL:
+                case self::TOTALIZABLE_ONLY_FILTERED:
 
                     $totalCriteria = $this->getFilteringCriteria($filter->createFilterForTotalFilteredRecords());
                     $totalCollection = $object->matching($totalCriteria);
 
                     $totalFiltered = $totalCollection->count();
 
-                    if ($totalizableMode === RestService::TOTALIZABLE_ALL) {
+                    if ($totalizableMode === self::TOTALIZABLE_ALL) {
                         // faz mais uma busca para trazer o total sem filtro
                         $totalCriteria = $this->getFilteringCriteria($filter->createFilterForTotalRecords());
                         $totalCollection = $object->matching($totalCriteria);
@@ -41,7 +41,7 @@ class SelectableIncorporator extends AbstractIncorporator
                     $filter->setTotalRecords($total, $totalFiltered);
                     unset($totalCollection);
                     break;
-                case RestService::TOTALIZABLE_UNKNOWN:
+                case self::TOTALIZABLE_UNKNOWN:
                     $filter->setTotalRecords(
                         $filter->getFirstResult() + $filter->getMaxResults() + 1
                     );

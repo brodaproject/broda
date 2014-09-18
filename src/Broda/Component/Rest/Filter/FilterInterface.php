@@ -1,6 +1,9 @@
 <?php
 
 namespace Broda\Component\Rest\Filter;
+use Broda\Component\Rest\Filter\Param\Column;
+use Broda\Component\Rest\Filter\Param\Ordering;
+use Broda\Component\Rest\Filter\Param\Searching;
 
 /**
  * Interface FilterInterface
@@ -85,6 +88,54 @@ interface FilterInterface
      * @return Param\Searching[]
      */
     public function getColumnSearchs();
+
+    /**
+     * Define as colunas de parametro do filtro
+     *
+     * @param Column[] $columns
+     * @return self
+     */
+    public function setColumns(array $columns);
+
+    /**
+     * TODO: doc
+     *
+     * @param Searching[] $columnSearchs
+     * @return self
+     */
+    public function setColumnSearchs(array $columnSearchs);
+
+    /**
+     * TODO: doc
+     *
+     * @param int $firstResult
+     * @return self
+     */
+    public function setFirstResult($firstResult);
+
+    /**
+     * TODO: doc
+     *
+     * @param Searching $globalSearch
+     * @return self
+     */
+    public function setGlobalSearch(Searching $globalSearch);
+
+    /**
+     * TODO: doc
+     *
+     * @param int $maxResults
+     * @return self
+     */
+    public function setMaxResults($maxResults);
+
+    /**
+     * TODO: doc
+     *
+     * @param Ordering[] $orderings
+     * @return self
+     */
+    public function setOrderings(array $orderings);
 
     /**
      *

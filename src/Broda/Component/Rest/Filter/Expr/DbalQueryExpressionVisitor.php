@@ -68,10 +68,10 @@ class DbalQueryExpressionVisitor extends AbstractQueryExpressionVisitor
     {
         switch($type) {
             case CompositeExpression::TYPE_AND:
-                return $this->expr->andX($expressionList);
+                return new \Doctrine\DBAL\Query\Expression\CompositeExpression(\Doctrine\DBAL\Query\Expression\CompositeExpression::TYPE_AND, $expressionList);
 
             case CompositeExpression::TYPE_OR:
-                return $this->expr->orX($expressionList);
+                return new \Doctrine\DBAL\Query\Expression\CompositeExpression(\Doctrine\DBAL\Query\Expression\CompositeExpression::TYPE_OR, $expressionList);
 
             default:
                 throw new \RuntimeException("Unknown composite " . $type);
