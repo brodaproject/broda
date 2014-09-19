@@ -28,12 +28,12 @@ class FileUtils
             if (is_file(rtrim($checkFolder, '/') . '/' . $name)) {
                 if ($recursive) {
                     // tenta gerar outro nome até encontrar um realmente único
-                    return $this->generateImageName($extension, $checkFolder, $recursive);
+                    //return $this->generateImageName($extension, $checkFolder, $recursive);
                 }
                 else {
                     // arquivo ja existe, lançar exceção para ser tratada fora
-                    throw new FileAlreadyExistsException(sprintf('%s already exists in folder %s',
-                            $name, $checkFolder));
+                    //throw new FileAlreadyExistsException(sprintf('%s already exists in folder %s',
+                    //        $name, $checkFolder));
                 }
             }
         }

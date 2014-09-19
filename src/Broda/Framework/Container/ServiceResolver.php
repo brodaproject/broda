@@ -4,12 +4,29 @@ namespace Broda\Framework;
 
 use Pimple\Container;
 
-class ContainerServiceResolver
+/**
+ * Classe que resolve um serviço de um container no formato 'nome_do_servico:metodo'
+ * em um callback válido.
+ *
+ * É geralmente necessário quando é mais interessante usar um objeto de
+ * forma lazy do que carregá-lo na memória.
+ *
+ * @package Broda\Framework
+ */
+class ServiceResolver
 {
     const SERVICE_PATTERN = "/[A-Za-z0-9\._\-]+:[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*/";
 
+    /**
+     * @var Container
+     */
     private $sc;
 
+    /**
+     * Construtor.
+     *
+     * @param Container $container
+     */
     public function __construct(Container $container)
     {
         $this->sc = $container;

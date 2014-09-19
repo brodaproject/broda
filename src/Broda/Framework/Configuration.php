@@ -3,7 +3,9 @@
 namespace Broda\Framework;
 
 use Pimple\Container;
+use Pimple\ServiceProviderInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Controller\ControllerResolver;
 use Symfony\Component\HttpKernel\EventListener\EsiListener;
@@ -21,6 +23,10 @@ use Symfony\Component\HttpKernel\HttpKernel;
  */
 class Configuration extends Container
 {
+
+    private $booted = false;
+    private $providers = array();
+
     public function __construct(array $values = array())
     {
         parent::__construct();
@@ -46,11 +52,11 @@ class Configuration extends Container
         };
 
         $sc['resolver'] = function ($sc) {
-            return new ServiceControllerResolver(new ControllerResolver($sc['logger']), $sc['service_resolver']);
+            return new ControllerResolver($sc['logger']);
         };
 
         $sc['service_resolver'] = function ($sc) {
-            return new ContainerServiceResolver($sc);
+            return new ServiceResolver($sc);
         };
 
         $sc['request_stack'] = function () {
@@ -79,10 +85,8 @@ class Configuration extends Container
             return new Store($dir);
         };
 
-        $this->extend('dispatcher', function ($dispatcher, $sc) {
-
+        $this->extend('dispatcher', function (EventDispatcherInterface $dispatcher, $sc) {
             $dispatcher->addSubscriber(new EsiListener($sc['cache.esi']));
-
             return $dispatcher;
         });
         $this->extend('kernel', function ($kernel, $sc) {
@@ -91,4 +95,19 @@ class Configuration extends Container
             ));
         });
     }
+
+    public function register(ServiceProviderInterface $provider, array $values = array())
+    {
+        if ($provider instanceof EventSubscriberProviderInterface) {
+            $this->extend('dispatcher', function (EventDispatcherInterface $dispatcher, $sc) use ($provider) {
+                $provider->subscribe($sc, $dispatcher);
+                return $dispatcher;
+            });
+        }
+
+        parent::register($provider, $values);
+
+        return $this;
+    }
+
 }

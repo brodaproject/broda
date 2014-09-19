@@ -1,7 +1,8 @@
 <?php
 
-namespace Broda\Framework;
+namespace Broda\Framework\Controller;
 
+use Broda\Framework\ServiceResolver;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Controller\ControllerResolverInterface;
 
@@ -14,19 +15,18 @@ class ServiceControllerResolver implements ControllerResolverInterface
 {
 
     private $controllerResolver;
-    private $containerServiceResolver;
+    private $serviceResolver;
 
     /**
      * Constructor.
      *
      * @param ControllerResolverInterface $controllerResolver A ControllerResolverInterface instance to delegate to
-     * @param CallbackResolver            $callbackResolver   A service resolver instance
+     * @param ServiceResolver             $callbackResolver   A service resolver instance
      */
-    public function __construct(ControllerResolverInterface $controllerResolver,
-            ContainerServiceResolver $callbackResolver)
+    public function __construct(ControllerResolverInterface $controllerResolver, ServiceResolver $callbackResolver)
     {
         $this->controllerResolver = $controllerResolver;
-        $this->containerServiceResolver = $callbackResolver;
+        $this->serviceResolver = $callbackResolver;
     }
 
     /**
@@ -36,8 +36,8 @@ class ServiceControllerResolver implements ControllerResolverInterface
     {
         $controller = $request->attributes->get('_controller', null);
 
-        if ($this->containerServiceResolver->isValid($controller)) {
-            return $this->containerServiceResolver->convertCallback($controller);
+        if ($this->serviceResolver->isValid($controller)) {
+            return $this->serviceResolver->convertCallback($controller);
         }
 
         return $this->controllerResolver->getController($request);

@@ -27,22 +27,10 @@ class Registry extends AbstractManagerRegistry
      */
     private $sc;
 
-    public function __construct(
-            Container $sc,
-            array $connections,
-            array $managers,
-            $defaultConnection,
-            $defaultManager
-    ) {
+    public function __construct(Container $sc, array $connections, array $managers, $defaultConnection, $defaultManager)
+    {
         $this->sc = $sc;
-        parent::__construct(
-                'doctrine',
-                $connections,
-                $managers,
-                $defaultConnection,
-                $defaultManager,
-                'Doctrine\Common\Proxy\Proxy'
-        );
+        parent::__construct('doctrine', $connections, $managers, $defaultConnection, $defaultManager, 'Doctrine\Common\Proxy\Proxy');
     }
 
     protected function getService($name)

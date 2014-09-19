@@ -2,6 +2,7 @@
 
 namespace Broda\Framework\Provider;
 
+use Broda\Framework\EventSubscriberProviderInterface;
 use Doctrine\Common\Annotations\Reader;
 use Pimple\Container;
 use Pimple\ServiceProviderInterface;
@@ -18,7 +19,7 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
  *
  * @author raphael
  */
-class FrameworkExtraProvider implements ServiceProviderInterface
+class FrameworkExtraProvider implements ServiceProviderInterface, EventSubscriberProviderInterface
 {
 
     public function register(Container $sc)
@@ -27,12 +28,6 @@ class FrameworkExtraProvider implements ServiceProviderInterface
         if (!isset($sc['annotation.reader']) || !$sc['annotation.reader'] instanceof Reader) {
             throw new \LogicException('The service \'annotation.reader\' must be an instance of Doctrine\Common\Annotations\Reader');
         }
-
-        $provider = $this;
-        $sc->extend('dispatcher', function ($dispatcher) use ($sc, $provider) {
-            $provider->subscribe($sc, $dispatcher);
-            return $dispatcher;
-        });
 
         $sc['extra.paramconverter.auto_convert'] = true;
         $sc['extra.paramconverter.manager'] = function ($sc) {
