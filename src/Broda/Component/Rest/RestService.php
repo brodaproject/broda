@@ -6,7 +6,9 @@ use Broda\Component\Rest\Filter\Expr as FilterExpr;
 use Broda\Component\Rest\Filter\FilterInterface;
 use Broda\Component\Rest\Filter\Incorporator\IncorporatorFactory;
 use Broda\Component\Rest\Filter\Incorporator\IncorporatorInterface;
+use Broda\Component\Rest\Filter\Incorporator\JoinableIncorporatorInterface;
 use Broda\Component\Rest\Filter\Param as FilterParam;
+use Broda\Component\Rest\Filter\TotalizableInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use JMS\Serializer\Serializer;
 use JMS\Serializer\SerializerBuilder;
@@ -101,7 +103,7 @@ class RestService
      *
      * Internal. Return a RestResponse instead.
      *
-     * @param mixed $data
+     * @param mixed  $data
      * @param string $format
      * @return string
      */
@@ -114,7 +116,7 @@ class RestService
      * Creates a object from request data
      *
      * @param Request $request
-     * @param string $class
+     * @param string  $class
      * @return mixed
      */
     public function createObjectFromRequest(Request $request, $class)
@@ -140,9 +142,9 @@ class RestService
     /**
      * Filters a collection and return data filtered by request
      *
-     * @param mixed $collection
+     * @param mixed           $collection
      * @param FilterInterface $filter
-     * @param array $fieldMap
+     * @param array           $fieldMap
      * @return array
      * @throws \UnexpectedValueException
      */
@@ -153,7 +155,37 @@ class RestService
         }
 
         $incorporator = $this->incorporatorFactory->getIncorporator($collection);
-        $incorporator->setFieldMap($fieldMap);
+        if ($incorporator instanceof JoinableIncorporatorInterface) {
+            $incorporator->setFieldMap($fieldMap);
+        }
+
+        if ($filter instanceof TotalizableInterface) {
+            switch ($totalizableMode = $this->totalizableMode) {
+                case IncorporatorInterface::TOTALIZABLE_ALL:
+                case IncorporatorInterface::TOTALIZABLE_ONLY_FILTERED:
+
+                    $totalFiltered = $incorporator->count($collection,
+                        $filter->createFilterForTotalFilteredRecords());
+
+                    if ($totalizableMode === IncorporatorInterface::TOTALIZABLE_ALL) {
+                        // faz mais uma busca para trazer o total sem filtro
+                        $total = $incorporator->count($collection,
+                            $filter->createFilterForTotalRecords());
+                    } else {
+                        $total = $totalFiltered;
+                    }
+
+                    $filter->setTotalRecords($total, $totalFiltered);
+                    unset($totalCollection);
+                    break;
+                case IncorporatorInterface::TOTALIZABLE_UNKNOWN:
+                    $filter->setTotalRecords(
+                        $filter->getFirstResult() + $filter->getMaxResults() + 1
+                    );
+                    break;
+            }
+        }
+
         return $filter->getOutputResponse($incorporator->incorporate($collection, $filter));
 
     }

@@ -2,35 +2,19 @@
 
 namespace Broda\Component\Rest\Filter\Incorporator;
 
-
 use Broda\Component\Rest\Filter\FilterInterface;
-use Broda\Component\Rest\RestService;
 
+/**
+ *
+ * @author raphael
+ */
 class IncorporatorFactory
 {
     private static $incorporators = array(
-        'Doctrine\ORM\QueryBuilder' =>
-            'Broda\Component\Rest\Filter\Incorporator\OrmQueryBuilderIncorporator',
-        'Doctrine\DBAL\Query\QueryBuilder' =>
-            'Broda\Component\Rest\Filter\Incorporator\DbalQueryBuilderIncorporator',
-        'Doctrine\Common\Collections\Selectable' =>
-            'Broda\Component\Rest\Filter\Incorporator\SelectableIncorporator',
+        'Broda\Component\Rest\Filter\Incorporator\OrmQueryBuilderIncorporator',
+        'Broda\Component\Rest\Filter\Incorporator\DbalQueryBuilderIncorporator',
+        'Broda\Component\Rest\Filter\Incorporator\SelectableIncorporator',
     );
-
-    /**
-     * @var RestService
-     */
-    private $rest;
-
-    /**
-     * Construtor
-     *
-     * @param RestService $rest
-     */
-    function __construct(RestService $rest)
-    {
-        $this->rest = $rest;
-    }
 
     /**
      * @param mixed $class
@@ -39,30 +23,23 @@ class IncorporatorFactory
      */
     public function getIncorporator($class)
     {
-        if (is_object($class)) {
-            $class = get_class($class);
+        foreach (self::$incorporators as $incorporator) {
+            /* @var $incorporator IncorporatorInterface */
+            if ($incorporator::supports($class)) {
+                return new $incorporator();
+            }
         }
-
-        $incorpClass = $this->getIncorporatorClass($class);
-        if (null === $incorpClass) {
-            throw new \UnexpectedValueException('Incorporator '.$class.' não registrado');
-        }
-        $incorporator = new $incorpClass($this->rest);
-        if (!$incorporator instanceof IncorporatorInterface) {
-            throw new \UnexpectedValueException('Incorporator '.$class.' não é valido');
-        }
-        return $incorporator;
+        throw new \RuntimeException(sprintf('Incorporator %s não registrado', $class));
     }
 
-    private function getIncorporatorClass($objectClass)
+    public static function addIncorporator($incorpClass)
     {
-        if (isset(self::$incorporators[$objectClass])) {
-            return self::$incorporators[$objectClass];
+        if (!is_subclass_of($incorpClass,
+            'Broda\Component\Rest\Filter\Incorporator\IncorporatorInterface')) {
+            throw new \UnexpectedValueException(sprintf('Incorporator %s não é valido', $incorpClass));
         }
-        foreach (self::$incorporators as $keyClass => $valueClass) {
-            if (is_subclass_of($objectClass, $keyClass)) {
-                return $valueClass;
-            }
+        if (!in_array($incorpClass, self::$incorporators)) {
+            self::$incorporators[] = $incorpClass;
         }
     }
 

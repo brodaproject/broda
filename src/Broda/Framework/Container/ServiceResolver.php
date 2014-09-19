@@ -1,6 +1,6 @@
 <?php
 
-namespace Broda\Framework;
+namespace Broda\Framework\Container;
 
 use Pimple\Container;
 

@@ -17,12 +17,17 @@ class FilterBuilder implements FilterBuilderInterface
     private $maxResults;
     private $globalSearch;
     private $orders = array();
+    private $isTotalizable = false;
+    private $outputCallback;
 
     public static function create()
     {
         return new static();
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function addColumn($name, $data = null, $orderable = true, $searchable = true)
     {
         $this->columns[$name] = array(
@@ -35,6 +40,9 @@ class FilterBuilder implements FilterBuilderInterface
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function addSubColumn($columnName, $name, $data = null, $orderable = true, $searchable = true)
     {
         if (!isset($this->columns[$columnName])) {
@@ -49,6 +57,9 @@ class FilterBuilder implements FilterBuilderInterface
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function setColumns(array $columns)
     {
         $filtered = array_filter($columns, function ($elem) {
@@ -78,6 +89,9 @@ class FilterBuilder implements FilterBuilderInterface
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function addColumnSearch($name, $search)
     {
         $this->columnSearchs[] = array(
@@ -87,7 +101,11 @@ class FilterBuilder implements FilterBuilderInterface
         return $this;
     }
 
-    // TODO: permitir o formato (nome => pesquisa, ...)
+    /**
+     * {@inheritdoc}
+     *
+     * TODO: permitir o formato (nome => pesquisa, ...)
+     */
     public function setColumnSearchs(array $searchs)
     {
         $filtered = array_filter($searchs, function ($elem) {
@@ -104,24 +122,36 @@ class FilterBuilder implements FilterBuilderInterface
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function setFirstResult($firstResult)
     {
         $this->firstResult = $firstResult;
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function setMaxResults($maxResults)
     {
         $this->maxResults = $maxResults;
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function setGlobalSearch($globalSearch)
     {
         $this->globalSearch = $globalSearch;
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function addOrdering($name, $direction = Criteria::ASC)
     {
         $this->orders[] = array(
@@ -131,18 +161,49 @@ class FilterBuilder implements FilterBuilderInterface
         return $this;
     }
 
-    // TODO: permitir o formato (nome => dir, ...)
+    /**
+     * {@inheritdoc}
+     *
+     * TODO: permitir o formato (nome => dir, ...)
+     */
     public function setOrderings(array $orderings)
     {
         //TODO
     }
 
     /**
-     * @return FilterInterface
+     * {@inheritdoc}
+     */
+    public function setTotalizable($bool)
+    {
+        $this->isTotalizable = (bool)$bool;
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setOutputCallback($callback)
+    {
+        if (!is_callable($callback)) {
+            throw new \InvalidArgumentException(sprintf('A callable is required, %s given', gettype($callback)));
+        }
+        $this->outputCallback = $callback;
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
      */
     public function getFilter()
     {
-        $filter = new NullFilter();
+        if ($this->isTotalizable) {
+            $filter = new GenericTotalizableFilter();
+        } else {
+            $filter = new GenericFilter();
+        }
+
+        if (isset($this->outputCallback)) $filter->setOutputCallback($this->outputCallback);
         if (isset($this->firstResult)) $filter->setFirstResult($this->firstResult);
         if (isset($this->maxResults)) $filter->setMaxResults($this->maxResults);
         if (isset($this->globalSearch)) $filter->setGlobalSearch(new Searching($this->globalSearch, true));

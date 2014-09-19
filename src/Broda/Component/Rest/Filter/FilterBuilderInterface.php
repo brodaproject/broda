@@ -25,6 +25,14 @@ interface FilterBuilderInterface
 
     public function setOrderings(array $orderings);
 
+    public function setTotalizable($bool);
+
+    /**
+     * @param callable $callback
+     * @return self
+     */
+    public function setOutputCallback($callback);
+
     /**
      * @return FilterInterface
      */

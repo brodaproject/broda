@@ -2,9 +2,13 @@
 
 namespace Broda\Component\Rest\Filter\Incorporator;
 
-
 use Broda\Component\Rest\Filter\FilterInterface;
 
+/**
+ * Interface IncorporatorInterface
+ *
+ * @author raphael
+ */
 interface IncorporatorInterface
 {
 
@@ -37,7 +41,32 @@ interface IncorporatorInterface
      */
     const TOTALIZABLE_UNKNOWN = 102;
 
-    public function incorporate($object, FilterInterface $filter);
+    /**
+     * Filtra uma coleção de dados e retorna uma nova coleção filtrados
+     * pelo {@link FilterInterface}.
+     *
+     * @param mixed           $collection Coleção/repositório de dados a serem filtrados
+     * @param FilterInterface $filter     Filtro definido pelo usuário via client side
+     * @return mixed Coleção dos dados filtrados
+     */
+    public function incorporate($collection, FilterInterface $filter);
 
-    public function setFieldMap(array $fieldMap);
+    /**
+     * Retorna a contagem do total de registros filtrados pelo
+     * {@link FilterInterface} na coleção de dados.
+     *
+     * @param mixed           $collection Coleção/repositório de dados a serem filtrados
+     * @param FilterInterface $filter     Filtro definido pelo usuário via client side
+     * @return int Total de registros filtrados
+     */
+    public function count($collection, FilterInterface $filter);
+
+    /**
+     * Retorna TRUE se a coleção é suportada pelo Incorporator.
+     *
+     * @param mixed $collection Coleção/repositório de dados a serem filtrados
+     * @return bool
+     */
+    public static function supports($collection);
+
 } 

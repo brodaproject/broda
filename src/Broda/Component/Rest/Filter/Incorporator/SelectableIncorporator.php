@@ -4,7 +4,6 @@ namespace Broda\Component\Rest\Filter\Incorporator;
 
 use Broda\Component\Rest\Filter\Param as FilterParam;
 use Broda\Component\Rest\Filter\FilterInterface;
-use Broda\Component\Rest\Filter\TotalizableInterface;
 
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\Common\Collections\Expr\CompositeExpression;
@@ -12,45 +11,32 @@ use Doctrine\Common\Collections\Selectable;
 
 class SelectableIncorporator extends AbstractIncorporator
 {
-    public function incorporate($object, FilterInterface $filter)
+    /**
+     * {@inheritdoc}
+     */
+    public function incorporate($collection, FilterInterface $filter)
     {
-        /* @var $object Selectable */
+        /* @var $collection Selectable */
         $criteria = $this->getFilteringCriteria($filter);
+        return $collection->matching($criteria);
+    }
 
-        if ($filter instanceof TotalizableInterface) {
+    /**
+     * {@inheritdoc}
+     */
+    public function count($collection, FilterInterface $filter)
+    {
+        /* @var $collection Selectable */
+        $criteria = $this->getFilteringCriteria($filter);
+        return $collection->matching($criteria)->count();
+    }
 
-            switch ($totalizableMode = $this->rest->getTotalizableMode()) {
-                case self::TOTALIZABLE_ALL:
-                case self::TOTALIZABLE_ONLY_FILTERED:
-
-                    $totalCriteria = $this->getFilteringCriteria($filter->createFilterForTotalFilteredRecords());
-                    $totalCollection = $object->matching($totalCriteria);
-
-                    $totalFiltered = $totalCollection->count();
-
-                    if ($totalizableMode === self::TOTALIZABLE_ALL) {
-                        // faz mais uma busca para trazer o total sem filtro
-                        $totalCriteria = $this->getFilteringCriteria($filter->createFilterForTotalRecords());
-                        $totalCollection = $object->matching($totalCriteria);
-
-                        $total = $totalCollection->count();
-                    } else {
-                        $total = $totalFiltered;
-                    }
-
-                    $filter->setTotalRecords($total, $totalFiltered);
-                    unset($totalCollection);
-                    break;
-                case self::TOTALIZABLE_UNKNOWN:
-                    $filter->setTotalRecords(
-                        $filter->getFirstResult() + $filter->getMaxResults() + 1
-                    );
-                    break;
-            }
-
-        }
-
-        return $object->matching($criteria);
+    /**
+     * {@inheritdoc}
+     */
+    public static function supports($collection)
+    {
+        return is_object($collection) && ($collection instanceof Selectable);
     }
 
     /**

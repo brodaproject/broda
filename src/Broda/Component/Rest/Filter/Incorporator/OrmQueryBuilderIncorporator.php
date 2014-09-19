@@ -4,63 +4,56 @@ namespace Broda\Component\Rest\Filter\Incorporator;
 
 use Broda\Component\Rest\Filter\Expr\OrmQueryExpressionVisitor;
 use Broda\Component\Rest\Filter\FilterInterface;
-use Broda\Component\Rest\Filter\TotalizableInterface;
 
 use Doctrine\ORM\QueryBuilder;
 
 
-class OrmQueryBuilderIncorporator extends SelectableIncorporator
+class OrmQueryBuilderIncorporator extends SelectableIncorporator implements JoinableIncorporatorInterface
 {
+
+    protected $fieldMap = array();
+
+    /**
+     * {@inheritdoc}
+     */
     public function incorporate($qb, FilterInterface $filter)
     {
         /* @var $qb QueryBuilder */
         $qbFiltered = clone $qb;
         $this->incorporateOrmQueryBuilder($qbFiltered, $filter);
 
-        if ($filter instanceof TotalizableInterface) {
+        return $qbFiltered->getQuery()->getResult(\Doctrine\ORM\Query::HYDRATE_OBJECT);
+    }
 
-            switch ($totalizableMode = $this->rest->getTotalizableMode()) {
-                case self::TOTALIZABLE_ALL:
-                case self::TOTALIZABLE_ONLY_FILTERED:
+    /**
+     * {@inheritdoc}
+     */
+    public function count($collection, FilterInterface $filter)
+    {
+        /* @var $collection QueryBuilder */
+        $rootAliases = $collection->getRootAliases();
 
-                    $rootAliases = $qb->getRootAliases();
+        $qbFilteredCount = clone $collection;
+        $qbFilteredCount->select($qbFilteredCount->expr()->count($rootAliases[0]));
+        $this->incorporateOrmQueryBuilder($qbFilteredCount, $filter);
 
-                    $qbFilteredCount = clone $qb;
-                    $qbFilteredCount->select($qbFilteredCount->expr()->count($rootAliases[0]));
-                    $this->incorporateOrmQueryBuilder($qbFilteredCount,
-                        $filter->createFilterForTotalFilteredRecords());
+        return $qbFilteredCount->getQuery()->getSingleScalarResult();
+    }
 
-                    $totalFiltered = $qbFilteredCount->getQuery()->getSingleScalarResult();
+    /**
+     * {@inheritdoc}
+     */
+    public static function supports($collection)
+    {
+        return ($collection instanceof QueryBuilder);
+    }
 
-                    if ($totalizableMode === self::TOTALIZABLE_ALL) {
-                        // faz mais um SELECT pra pegar o total de registros sem filtragem (EXPENSIVE!)
-
-                        $qbFilteredCount = clone $qb;
-                        $qbFilteredCount->select($qbFilteredCount->expr()->count($rootAliases[0]));
-                        $this->incorporateOrmQueryBuilder($qbFilteredCount,
-                            $filter->createFilterForTotalRecords());
-
-                        $total = $qbFilteredCount->getQuery()->getSingleScalarResult();
-
-                    } else {
-                        // (FAST)
-                        $total = $totalFiltered;
-                    }
-
-                    $filter->setTotalRecords($total, $totalFiltered);
-                    unset($qbFilteredCount);
-                    break;
-                case self::TOTALIZABLE_UNKNOWN:
-                    $filter->setTotalRecords(
-                        $filter->getFirstResult() + $filter->getMaxResults() + 1
-                    );
-                    break;
-            }
-
-        }
-
-        $query = $qbFiltered->getQuery();
-        return $query->getResult(\Doctrine\ORM\Query::HYDRATE_OBJECT);
+    /**
+     * {@inheritdoc}
+     */
+    public function setFieldMap(array $fieldMap)
+    {
+        $this->fieldMap = $fieldMap;
     }
 
     /**

@@ -1,27 +1,16 @@
 <?php
 namespace Broda\Tests\Component\Rest\Filter\Tokenizers;
+use Broda\Component\Rest\Filter\Tokenizers\BasicTokenizer;
 
 /**
  * @group unit
  */
-class BasicTokenizerTest extends \PHPUnit_Framework_TestCase
+class BasicTokenizerTest extends BaseTokenizerTest
 {
 
-    private $tokenizer;
-
-    protected function setUp()
+    protected function getTokenizer()
     {
-        $this->tokenizer = new \Broda\Component\Rest\Filter\Tokenizers\BasicTokenizer();
-    }
-
-    /**
-     * @dataProvider searchsProvider
-     */
-    public function testTokenize($search, $expectedWords)
-    {
-        $words = $this->tokenizer->tokenize($search);
-
-        $this->assertEquals($expectedWords, $words);
+        return new BasicTokenizer();
     }
 
     /**

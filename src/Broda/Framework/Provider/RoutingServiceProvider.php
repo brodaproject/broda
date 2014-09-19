@@ -2,6 +2,7 @@
 
 namespace Broda\Framework\Provider;
 
+use Broda\Framework\EventSubscriberProviderInterface;
 use Pimple\Container;
 use Pimple\ServiceProviderInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Routing\AnnotatedRouteControllerLoader;
@@ -17,18 +18,11 @@ use Symfony\Component\Routing\Router;
  *
  * @author raphael
  */
-class RoutingServiceProvider implements ServiceProviderInterface
+class RoutingServiceProvider implements ServiceProviderInterface, EventSubscriberProviderInterface
 {
 
     public function register(Container $sc)
     {
-        $provider = $this;
-        $sc->extend('dispatcher',
-                function ($dispatcher) use ($sc, $provider) {
-            $provider->subscribe($sc, $dispatcher);
-            return $dispatcher;
-        });
-
         $sc['router.loader'] = function () use ($sc) {
             return new AnnotationDirectoryLoader(
                     new FileLocator($sc['controllers_dir']),

@@ -3,24 +3,35 @@
 namespace Broda\Component\Rest\Filter\Tokenizers;
 
 /**
- * Classe BasicTokenizer
+ * Cria tokens para strings separadas por espaços. Se
+ * a string estiver envolvida por aspas ou apóstrofos, o token
+ * considera os espaços.
+ *
+ * É bem parecido com a tokenização da pesquisa do Google.
+ *
+ * Ignora caracteres que não são letras, números, espaços ou aspas.
  *
  * @author raphael
  */
 class BasicTokenizer implements TokenizerInterface
 {
 
-    public $ignoreChars = '/[^\w\s"\']/u';
+    public $ignoreChars = '/[^\w\s%s]/u';
     public $quotes      = array('"', "'");
-    public $whitespaces = array(' ', "\s", "\t", "\r", "\n", "\0");
+    public $whitespaces = array(' ', "\s", "\t", "\r", "\n");
 
     private $quotings = array();
     private $words = array();
 
+    /**
+     * {@inheritdoc}
+     */
     public function tokenize($string)
     {
         // clean string
-        $string = preg_replace($this->ignoreChars, '', $string);
+        $ignoreCharsRegex = sprintf($this->ignoreChars,
+            implode('', $this->quotes) . implode('', $this->whitespaces));
+        $string = preg_replace($ignoreCharsRegex, '', $string);
 
         $word = '';
         $quote = false;
@@ -52,21 +63,38 @@ class BasicTokenizer implements TokenizerInterface
         return $this->words;
     }
 
+    /**
+     * @internal
+     * Define se está em modo "aspas" ou não
+     */
     private function setQuoting($quote)
     {
         $this->quotings[$quote] = true;
     }
 
+    /**
+     * @internal
+     * Define que não está mais em modo "aspas"
+     */
     private function unsetQuoting($quote)
     {
         unset($this->quotings[$quote]);
     }
 
+    /**
+     * @internal
+     * Verifica se está em modo "aspas"
+     */
     private function isQuoting($quote)
     {
         return isset($this->quotings[$quote]);
     }
 
+    /**
+     * @internal
+     * Verifica se está em modo "aspas" em qualquer aspas correntes,
+     * a menos que $ignoreQuote seja passado (ignora aquela aspa específica).
+     */
     private function isAlreadyQuoting($ignoreQuote = null)
     {
         foreach ($this->quotings as $quote => $v) {
@@ -78,6 +106,10 @@ class BasicTokenizer implements TokenizerInterface
         return false;
     }
 
+    /**
+     * @internal
+     * Adiciona uma palavra no retorno do tokenizer
+     */
     private function addWord(&$word)
     {
         if ($word) {

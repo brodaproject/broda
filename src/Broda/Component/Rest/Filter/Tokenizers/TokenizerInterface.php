@@ -3,7 +3,7 @@
 namespace Broda\Component\Rest\Filter\Tokenizers;
 
 /**
- * Interface TokenizerInterface
+ * TODO: doc
  *
  * @author raphael
  */

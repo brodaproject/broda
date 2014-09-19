@@ -2,6 +2,8 @@
 
 namespace Broda\Framework;
 
+use Broda\Framework\Container\ServiceResolver;
+use Broda\Framework\Controller\Provider\ServiceControllerServiceProvider;
 use Pimple\Container;
 use Pimple\ServiceProviderInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -69,6 +71,7 @@ class Configuration extends Container
 
         $sc->register(new Provider\AnnotationServiceProvider(array($values['loader'])));
         $sc->register(new Provider\RoutingServiceProvider());
+        $sc->register(new ServiceControllerServiceProvider());
 
         foreach ($values as $key => $value) {
             $this->offsetSet($key, $value);

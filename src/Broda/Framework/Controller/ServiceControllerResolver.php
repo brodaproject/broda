@@ -2,7 +2,7 @@
 
 namespace Broda\Framework\Controller;
 
-use Broda\Framework\ServiceResolver;
+use Broda\Framework\Container\ServiceResolver;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Controller\ControllerResolverInterface;
 
