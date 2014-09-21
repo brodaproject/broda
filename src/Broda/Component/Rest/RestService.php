@@ -154,36 +154,41 @@ class RestService
             $collection = new ArrayCollection($collection);
         }
 
-        $incorporator = $this->incorporatorFactory->getIncorporator($collection);
-        if ($incorporator instanceof JoinableIncorporatorInterface) {
-            $incorporator->setFieldMap($fieldMap);
-        }
-
-        if ($filter instanceof TotalizableInterface) {
-            switch ($totalizableMode = $this->totalizableMode) {
-                case IncorporatorInterface::TOTALIZABLE_ALL:
-                case IncorporatorInterface::TOTALIZABLE_ONLY_FILTERED:
-
-                    $totalFiltered = $incorporator->count($collection,
-                        $filter->createFilterForTotalFilteredRecords());
-
-                    if ($totalizableMode === IncorporatorInterface::TOTALIZABLE_ALL) {
-                        // faz mais uma busca para trazer o total sem filtro
-                        $total = $incorporator->count($collection,
-                            $filter->createFilterForTotalRecords());
-                    } else {
-                        $total = $totalFiltered;
-                    }
-
-                    $filter->setTotalRecords($total, $totalFiltered);
-                    unset($totalCollection);
-                    break;
-                case IncorporatorInterface::TOTALIZABLE_UNKNOWN:
-                    $filter->setTotalRecords(
-                        $filter->getFirstResult() + $filter->getMaxResults() + 1
-                    );
-                    break;
+        try {
+            $incorporator = $this->incorporatorFactory->getIncorporator($collection);
+            if ($incorporator instanceof JoinableIncorporatorInterface) {
+                $incorporator->setFieldMap($fieldMap);
             }
+
+            if ($filter instanceof TotalizableInterface) {
+                switch ($totalizableMode = $this->totalizableMode) {
+                    case IncorporatorInterface::TOTALIZABLE_ALL:
+                    case IncorporatorInterface::TOTALIZABLE_ONLY_FILTERED:
+
+                        $totalFiltered = $incorporator->count($collection,
+                            $filter->createFilterForTotalFilteredRecords());
+
+                        if ($totalizableMode === IncorporatorInterface::TOTALIZABLE_ALL) {
+                            // faz mais uma busca para trazer o total sem filtro
+                            $total = $incorporator->count($collection,
+                                $filter->createFilterForTotalRecords());
+                        } else {
+                            $total = $totalFiltered;
+                        }
+
+                        $filter->setTotalRecords($total, $totalFiltered);
+                        unset($totalCollection);
+                        break;
+                    case IncorporatorInterface::TOTALIZABLE_UNKNOWN:
+                        $filter->setTotalRecords(
+                            $filter->getFirstResult() + $filter->getMaxResults() + 1
+                        );
+                        break;
+                }
+            }
+
+        } catch (\Exception $e) {
+            throw new \UnexpectedValueException('Collection inválido', $e->getCode(), $e);
         }
 
         return $filter->getOutputResponse($incorporator->incorporate($collection, $filter));

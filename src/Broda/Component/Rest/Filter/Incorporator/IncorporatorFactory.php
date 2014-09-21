@@ -17,19 +17,19 @@ class IncorporatorFactory
     );
 
     /**
-     * @param mixed $class
+     * @param mixed $object
      * @return IncorporatorInterface
      * @throws \Exception
      */
-    public function getIncorporator($class)
+    public function getIncorporator($object)
     {
         foreach (self::$incorporators as $incorporator) {
             /* @var $incorporator IncorporatorInterface */
-            if ($incorporator::supports($class)) {
+            if ($incorporator::supports($object)) {
                 return new $incorporator();
             }
         }
-        throw new \RuntimeException(sprintf('Incorporator %s não registrado', $class));
+        throw new \RuntimeException(sprintf('Incorporator para %s não registrado', $object));
     }
 
     public static function addIncorporator($incorpClass)

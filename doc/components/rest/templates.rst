@@ -34,7 +34,7 @@ Exemplos de coleções suportadas:
 
     // querybuilders
     $collection = $em->createQueryBuilder()
-                    ->select('u')->from('User', 'u');
+                    ->select('u')->from('Model\User', 'u');
 
     $collection = $dbal->createQueryBuilder()
                     ->select('u.id', 'u.name')->from('users', 'u');
@@ -52,7 +52,7 @@ que os filtros do lado cliente serão **incorporados** a ela automaticamente.
 
     $qb = $orm->createQueryBuilder() // ou DBAL
                 ->select('u')
-                ->from('User', 'u')
+                ->from('Model\User', 'u')
                 ->where('u.login = ?1')
                 ->setParameter(1, 'john');
 
@@ -70,7 +70,7 @@ tabela "root".
 
     $qb = $orm->createQueryBuilder() // ou DBAL
                 ->select('u')
-                ->from('User', 'u')
+                ->from('Model\User', 'u')
                 ->join('u.groups', 'g');
 
     $filter = /*...*/; // FilterInterface
@@ -134,9 +134,6 @@ filtrada. Geralmente, é retornado um ``ArrayCollection``, mas você pode
 fazer o retorno como array. O importante é que o RestService consiga
 tratar esse resultado no ``RestService::formatOutput``.
 
-O suporte para o ``TotalizableInterface`` você mesmo deve dar no método
-``incorporate``.
-
 Exemplo de um Incorporator customizado
 --------------------------------------
 
@@ -145,7 +142,7 @@ Abaixo um exemplo de como criar um incorporator e usá-lo na sua aplicação:
 .. code-block:: php
 
     // AppModelIncorporator.php
-    class AppModelIncorporator extends AbstractIncorporator
+    class AppModelIncorporator implements IncorporatorInterface
     {
         public function incorporate($collection, FilterInterface $filter)
         {
@@ -164,7 +161,8 @@ Abaixo um exemplo de como criar um incorporator e usá-lo na sua aplicação:
                         $criterias[ $col->getName() ] = array();
                     }
 
-                    $criterias[ $col->getName() ] = array_merge($criterias[ $col->getName() ], $$gSearch->getTokens());
+                    $criterias[ $col->getName() ] =
+                        array_merge($criterias[ $col->getName() ], $gSearch->getTokens());
                 }
             }
 
@@ -203,4 +201,4 @@ Abaixo um exemplo de como criar um incorporator e usá-lo na sua aplicação:
 
     $filter = /*...*/ // FilterInterface
 
-    $restResponse = $this->rest->filter($users, $filter);
+    $restResponse = $rest->filter($users, $filter);

@@ -9,7 +9,7 @@ use Doctrine\Common\Collections\Criteria;
 use Doctrine\Common\Collections\Expr\CompositeExpression;
 use Doctrine\Common\Collections\Selectable;
 
-class SelectableIncorporator extends AbstractIncorporator
+class SelectableIncorporator implements IncorporatorInterface
 {
     /**
      * {@inheritdoc}
