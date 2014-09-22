@@ -5,6 +5,8 @@ namespace Broda\Component\Rest\Filter;
 /**
  * Classe DataTableFilter
  *
+ * TODO: terminar
+ *
  * @author raphael
  */
 class BootstrapTableFilter extends AbstractFilter implements TotalizableInterface
@@ -31,7 +33,7 @@ class BootstrapTableFilter extends AbstractFilter implements TotalizableInterfac
         if ($request['search']) {
             $search = $request['search'] ?: '';
 
-            $this->globalSearch = new Param\Searching($search, false);
+            $this->globalSearch = new Param\Searching($search);
         }
 
         // bootstrap table does not support server ordering

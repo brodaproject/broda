@@ -5,11 +5,18 @@ namespace Broda\Component\Rest\Filter\Incorporator;
 use Broda\Component\Rest\Filter\FilterInterface;
 
 /**
+ * TODO doc
  *
  * @author raphael
  */
 class IncorporatorFactory
 {
+
+    /**
+     * Incorporators registrados
+     *
+     * @var IncorporatorInterface[]
+     */
     private static $incorporators = array(
         'Broda\Component\Rest\Filter\Incorporator\OrmQueryBuilderIncorporator',
         'Broda\Component\Rest\Filter\Incorporator\DbalQueryBuilderIncorporator',
@@ -17,14 +24,15 @@ class IncorporatorFactory
     );
 
     /**
+     * Retorna o incorporator registrado para a coleção ($object).
+     *
      * @param mixed $object
      * @return IncorporatorInterface
-     * @throws \Exception
+     * @throws \RuntimeException Se o incorporator para a coleção não for encontrado
      */
     public function getIncorporator($object)
     {
         foreach (self::$incorporators as $incorporator) {
-            /* @var $incorporator IncorporatorInterface */
             if ($incorporator::supports($object)) {
                 return new $incorporator();
             }
@@ -32,6 +40,12 @@ class IncorporatorFactory
         throw new \RuntimeException(sprintf('Incorporator para %s não registrado', $object));
     }
 
+    /**
+     * Registra um incorporator.
+     *
+     * @param string $incorpClass FQCN do incorporator a ser registrado
+     * @throws \UnexpectedValueException
+     */
     public static function addIncorporator($incorpClass)
     {
         if (!is_subclass_of($incorpClass,
@@ -43,6 +57,17 @@ class IncorporatorFactory
         }
     }
 
+    /**
+     * Incorpora um filtro à coleção ($object) escolhendo o incorporator
+     * ideal para o tipo de coleção.
+     *
+     * Não é suportado {@link JoinableIncorporatorInterface} neste método.
+     *
+     * @param mixed           $object Coleção a ser filtrada
+     * @param FilterInterface $filter Filtro definido pelo usuário
+     * @return mixed Coleção filtrada
+     * @throws \RuntimeException Se o incorporator para a coleção não for encontrado
+     */
     public function incorporate($object, FilterInterface $filter)
     {
         return $this->getIncorporator($object)->incorporate($object, $filter);

@@ -32,6 +32,9 @@ abstract class BaseTokenizerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($expectedWords, $words);
     }
 
+    /**
+     * @return array(array(mixed, midex))
+     */
     abstract public function searchsProvider();
 }
  

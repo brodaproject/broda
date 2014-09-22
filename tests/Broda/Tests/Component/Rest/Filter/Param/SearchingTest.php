@@ -2,6 +2,7 @@
 namespace Broda\Tests\Component\Rest\Filter\Param;
 
 use Broda\Component\Rest\Filter\Param\Searching;
+use Broda\Component\Rest\Filter\Tokenizers\BasicTokenizer;
 
 /**
  * @group unit
@@ -11,11 +12,14 @@ class SearchingTest extends \PHPUnit_Framework_TestCase
 
     public function testInstantiate()
     {
-        $sch = new Searching('foo bar', true, 'baz');
+        $sch = new Searching('foo bar', 'baz');
 
         $this->assertInstanceOf('Broda\Component\Rest\Filter\Param\Searching', $sch);
         $this->assertEquals('foo bar', $sch->getValue());
-        $this->assertTrue($sch->getRegex());
+        $this->assertFalse($sch->getRegex());
+        $this->assertFalse($sch->isExactly());
+        $this->assertTrue($sch->isTokenizable());
+        $this->assertEquals('AND', $sch->getTokenSeparator());
         $this->assertEquals('baz', $sch->getColumnName());
         $this->assertInstanceOf('Broda\Component\Rest\Filter\Tokenizers\BasicTokenizer', $sch->getTokenizer());
         $this->assertEquals(array('foo', 'bar'), $sch->getTokens());
@@ -25,8 +29,11 @@ class SearchingTest extends \PHPUnit_Framework_TestCase
     {
         $sch = new Searching('foo bar');
 
-        $this->assertFalse($sch->getRegex()); // TODO pensar se é melhor deixar false por padrão mesmo ou não
+        $this->assertFalse($sch->getRegex()); // é melhor deixar FALSE por padrão pois o processamento é pesado com regex
+        $this->assertFalse($sch->isExactly());
+        $this->assertTrue($sch->isTokenizable());
         $this->assertNull($sch->getColumnName());
+        $this->assertEquals('AND', $sch->getTokenSeparator());
         $this->assertInstanceOf('Broda\Component\Rest\Filter\Tokenizers\BasicTokenizer', $sch->getTokenizer());
         $this->assertEquals(array('foo', 'bar'), $sch->getTokens());
     }
@@ -51,6 +58,38 @@ class SearchingTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse($sch->getRegex());
     }
 
+    public function testSetExactly()
+    {
+        $sch = new Searching('foo bar');
+        $sch->setExactly(true);
+
+        $this->assertTrue($sch->isExactly());
+
+        $sch->setExactly(false);
+
+        $this->assertFalse($sch->isExactly());
+    }
+
+    public function testSetTokenizable()
+    {
+        $sch = new Searching('foo bar');
+        $sch->setTokenizable(true);
+
+        $this->assertTrue($sch->isTokenizable());
+
+        $sch->setTokenizable(false);
+
+        $this->assertFalse($sch->isTokenizable());
+    }
+
+    public function testSetTokenSeparator()
+    {
+        $sch = new Searching('foo bar');
+        $sch->setTokenSeparator('OR');
+
+        $this->assertEquals('OR', $sch->getTokenSeparator());
+    }
+
     public function testSetColumnName()
     {
         $sch = new Searching('foo bar');
@@ -61,7 +100,7 @@ class SearchingTest extends \PHPUnit_Framework_TestCase
 
     public function testSetTokenizer()
     {
-        $tokenizer = new \Broda\Component\Rest\Filter\Tokenizers\BasicTokenizer();
+        $tokenizer = new BasicTokenizer();
         $sch = new Searching('foo bar');
 
         $this->assertNotSame($tokenizer, $sch->getTokenizer());
@@ -83,7 +122,7 @@ class SearchingTest extends \PHPUnit_Framework_TestCase
 
     public function testGetTokensShouldTokenize()
     {
-        $tokenizer = new \Broda\Component\Rest\Filter\Tokenizers\BasicTokenizer();
+        $tokenizer = new BasicTokenizer();
         $sch = new Searching('foo bar');
         $sch->setTokenizer($tokenizer);
 

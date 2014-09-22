@@ -11,14 +11,19 @@ namespace Broda\Component\Rest\Filter\Tokenizers;
  *
  * Ignora caracteres que não são letras, números, espaços ou aspas.
  *
+ * NOTA: só é suportado strings UTF-8
+ *
+ * TODO: suportar outros charsets fora utf-8
+ *
  * @author raphael
  */
 class BasicTokenizer implements TokenizerInterface
 {
+    const IGNORE_CHARS_REGEX = '/[^%s]/u';
 
-    public $ignoreChars = '/[^\w\s%s]/u';
+    public $allowedChars = array("\\w", "\\s");
     public $quotes      = array('"', "'");
-    public $whitespaces = array(' ', "\s", "\t", "\r", "\n");
+    public $whitespaces = array(' ', "\t", "\r", "\n");
 
     private $quotings = array();
     private $words = array();
@@ -28,10 +33,13 @@ class BasicTokenizer implements TokenizerInterface
      */
     public function tokenize($string)
     {
-        // clean string
-        $ignoreCharsRegex = sprintf($this->ignoreChars,
-            implode('', $this->quotes) . implode('', $this->whitespaces));
-        $string = preg_replace($ignoreCharsRegex, '', $string);
+        // limpa string
+        $allowedChars = ''
+            . implode('', $this->allowedChars)
+            . implode('', $this->quotes)
+            . implode('', $this->whitespaces);
+
+        $string = preg_replace(sprintf(self::IGNORE_CHARS_REGEX, $allowedChars), '', $string);
 
         $word = '';
         $quote = false;
@@ -47,14 +55,16 @@ class BasicTokenizer implements TokenizerInterface
                     $this->setQuoting($quote);
                 }
 
+                // adiciona a ultima palavra formada, ou por
+                // fechar um quote ou por abrir um quote
                 $this->addWord($word);
 
             } elseif (in_array($char, $this->whitespaces) && !$this->isAlreadyQuoting()) {
-                // spacing
+                // espaço
                 $this->addWord($word);
                 
             } else {
-                // else, construct the word
+                // senão, constroi a palavra
                 $word .= $char;
             }
         }

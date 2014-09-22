@@ -2,6 +2,7 @@
 
 namespace Broda\Component\Rest;
 
+use Broda\Component\Rest\Filter\ErrorInformableInterface;
 use Broda\Component\Rest\Filter\Expr as FilterExpr;
 use Broda\Component\Rest\Filter\FilterInterface;
 use Broda\Component\Rest\Filter\Incorporator\IncorporatorFactory;
@@ -156,10 +157,14 @@ class RestService
 
         try {
             $incorporator = $this->incorporatorFactory->getIncorporator($collection);
-            if ($incorporator instanceof JoinableIncorporatorInterface) {
-                $incorporator->setFieldMap($fieldMap);
-            }
+        } catch (\RuntimeException $e) {
+            throw new \UnexpectedValueException('Collection inválido', $e->getCode(), $e);
+        }
+        if ($incorporator instanceof JoinableIncorporatorInterface) {
+            $incorporator->setFieldMap($fieldMap);
+        }
 
+        try {
             if ($filter instanceof TotalizableInterface) {
                 switch ($totalizableMode = $this->totalizableMode) {
                     case IncorporatorInterface::TOTALIZABLE_ALL:
@@ -188,7 +193,11 @@ class RestService
             }
 
         } catch (\Exception $e) {
-            throw new \UnexpectedValueException('Collection inválido', $e->getCode(), $e);
+            if ($filter instanceof ErrorInformableInterface) {
+                $filter->setErrorMessage($e->getMessage());
+            } else {
+                throw $e;
+            }
         }
 
         return $filter->getOutputResponse($incorporator->incorporate($collection, $filter));

@@ -62,79 +62,105 @@ class SelectableIncorporator implements IncorporatorInterface
     }
 
     /**
-     * Retorna o/um Criteria com os pósfiltros do FilterInterface.
-     *
-     * Útil para
-     *
+     * @internal
+     * @param FilterParam\Searching[] $columnSearchs
      * @param FilterInterface $filter
-     * @return Criteria
+     * @return CompositeExpression
      */
-    public function getFilteringCriteria(FilterInterface $filter)
+    private function getExpressionForColumnSearchs(array $columnSearchs, FilterInterface $filter)
     {
-        $criteria = Criteria::create();
-        $expr = Criteria::expr();
-
-        $columns = $filter->getColumns();
-        $columnSearchs = $filter->getColumnSearchs();
-        $globalSearch = $filter->getGlobalSearch();
-        $orders = $filter->getOrderings();
-        $start = $filter->getFirstResult();
-        $length = $filter->getMaxResults(); // max 50 lines per request
-
-        // defining search especific columns
         $searchExprs = array();
         foreach ($columnSearchs as $col) {
             /* @var $col FilterParam\Searching */
             $field = $col->getColumnName();
 
+            $searchs = $col->isTokenizable()
+                ? $col->getTokens()
+                : (array)$col->getValue();
+
             $searchColExprs = array();
-            foreach ($col->getTokens() as $search) {
+            foreach ($searchs as $search) {
+
+                $compExpr = $col->isExactly()
+                    ? Criteria::expr()->eq($field, $search)
+                    : Criteria::expr()->contains($field, $search);
 
                 $column = $filter->getColumn($field);
                 if ($column && count($subcols = $column->getSubColumns())) {
                     // with subcolumns
 
                     $searchSubColExprs = array();
-                    $searchSubColExprs[] = $expr->contains($field, $search); // self col ...
+                    $searchSubColExprs[] = $compExpr; // self col ...
                     foreach ($subcols as $subcol) {
                         /* @var $subcol FilterParam\Column */
                         $subfield = $subcol->getName();
-                        $searchSubColExprs[] = $expr->contains($subfield, $search); // .. and his subcolumns
+
+                        $compSubExpr = $col->isExactly()
+                            ? Criteria::expr()->eq($subfield, $search)
+                            : Criteria::expr()->contains($subfield, $search);
+
+                        $searchSubColExprs[] = $compSubExpr; // .. and his subcolumns
                     }
 
-                    $searchColExprs[] = $this->createCompositeExpression(CompositeExpression::TYPE_OR, $searchSubColExprs);
+                    $searchColExprs[] = $this->createCompositeExpression(
+                        CompositeExpression::TYPE_OR, $searchSubColExprs);
                 } else {
                     // no subcolumns
-                    $searchColExprs[] = $expr->contains($field, $search);
+                    $searchColExprs[] = $compExpr;
                 }
             }
 
-            $searchExprs[] = $this->createCompositeExpression(CompositeExpression::TYPE_AND /* TODO: deixar essa opção customizavel*/, $searchColExprs);
+            $searchExprs[] = $this->createCompositeExpression(
+                $col->getTokenSeparator(), $searchColExprs);
 
         }
-        $searchExpr = $this->createCompositeExpression(CompositeExpression::TYPE_AND, $searchExprs);
+        return $this->createCompositeExpression(
+            CompositeExpression::TYPE_AND, $searchExprs);
+    }
 
-        // defining search all
+    /**
+     * @internal
+     * @param FilterParam\Searching $globalSearch
+     * @param FilterInterface $filter
+     * @return CompositeExpression
+     */
+    private function getExpressionForGlobalSearch(FilterParam\Searching $globalSearch,
+                                                  FilterInterface $filter)
+    {
         $searchAllExprs = array();
-        if (null !== $globalSearch) {
+        foreach ($filter->getColumns() as $col) {
+            if (!$col->getSearchable()) continue;
 
-            foreach ($columns as $col) {
-                /* @var $col FilterParam\Column */
-                $field = $col->getName();
+            $field = $col->getName();
 
-                if (!$col->getSearchable()) continue;
+            $searchs = $globalSearch->isTokenizable()
+                ? $globalSearch->getTokens()
+                : (array)$globalSearch->getValue();
 
-                $searchColExprs = array();
-                foreach ($globalSearch->getTokens() as $search) {
-                    $searchColExprs[] = $expr->contains($field, $search);
-                }
+            $searchColExprs = array();
+            foreach ($searchs as $search) {
+                $compExpr = $globalSearch->isExactly()
+                    ? Criteria::expr()->eq($field, $search)
+                    : Criteria::expr()->contains($field, $search);
 
-                $searchAllExprs[] = $this->createCompositeExpression(CompositeExpression::TYPE_AND /* TODO: deixar essa opção customizavel*/, $searchColExprs);
+                $searchColExprs[] = $compExpr;
             }
-        }
-        $searchAllExpr = $this->createCompositeExpression(CompositeExpression::TYPE_OR, $searchAllExprs);
 
-        // defining orderings
+            $searchAllExprs[] = $this->createCompositeExpression(
+                $globalSearch->getTokenSeparator(), $searchColExprs);
+        }
+        return $this->createCompositeExpression(
+            CompositeExpression::TYPE_OR, $searchAllExprs);
+    }
+
+    /**
+     * @internal
+     * @param FilterParam\Ordering[] $orders
+     * @param FilterInterface $filter
+     * @return array
+     */
+    private function getOrderings(array $orders, FilterInterface $filter)
+    {
         $orderings = array();
         foreach ($orders as $order) {
             /* @var $order FilterParam\Ordering */
@@ -145,8 +171,33 @@ class SelectableIncorporator implements IncorporatorInterface
 
             $orderings[$field] = $dir;
         }
+        return $orderings;
+    }
 
-        // mount criteria
+    /**
+     * Retorna um {@link Criteria} para um {@link FilterInterface}.
+     *
+     * @param FilterInterface $filter
+     * @return Criteria
+     */
+    public function getFilteringCriteria(FilterInterface $filter)
+    {
+        $criteria = Criteria::create();
+
+        $columnSearchs = $filter->getColumnSearchs();
+        $globalSearch = $filter->getGlobalSearch();
+        $orders = $filter->getOrderings();
+        $start = $filter->getFirstResult();
+        $length = $filter->getMaxResults();
+
+        // constroi as expressões e os orderings
+        $orderings = $this->getOrderings($orders, $filter);
+        $searchExpr = $this->getExpressionForColumnSearchs($columnSearchs, $filter);
+        $searchAllExpr = (null !== $globalSearch)
+            ? $this->getExpressionForGlobalSearch($globalSearch, $filter)
+            : null;
+
+        // monta o criteria
         if (null !== $searchAllExpr) $criteria->andWhere($searchAllExpr);
         if (null !== $searchExpr) $criteria->andWhere($searchExpr);
         if (count($orderings)) $criteria->orderBy($orderings);

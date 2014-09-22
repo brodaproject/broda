@@ -50,7 +50,7 @@ class DefaultFilter extends AbstractFilter
 
         // global search is the 's' query parameter
         if (isset($params['s']) && $params['s'] !== '') {
-            $this->globalSearch = new Param\Searching($params['s'], false);
+            $this->globalSearch = new Param\Searching($params['s']);
         }
 
         // apaga para nao ser confundido com campo no search individual
@@ -63,7 +63,7 @@ class DefaultFilter extends AbstractFilter
                 $this->columns[] = new Param\Column($col);
             }
             if ($value !== '' && $this->hasColumn($col)) {
-                $this->columnSearchs[] = new Param\Searching($value, false, $col);
+                $this->columnSearchs[] = new Param\Searching($value, $col);
             }
         }
     }

@@ -256,19 +256,20 @@ abstract class AbstractFilter implements FilterInterface
 
     /**
      * Normaliza as colunas passadas por parametro e transforma em objetos
-     * do tipo Column.
+     * do tipo {@link Column}.
      *
-     * @param string[]|array[]|Column[] $columns
+     * @param string[]|array|Column[] $columns
+     * @return Column[]
      */
     public static function normalizeColumns(array $columns)
     {
         $normalizedCols = array();
         foreach ($columns as $col) {
             if (is_string($col)) {
-                // simple
+                // simples
                 $normalizedCols[] = new Column($col);
             } else {
-                // complete reference
+                // referencia completa
                 if ($col instanceof Column) {
                     $normalizedCols[] = $col;
                     continue;
@@ -318,6 +319,6 @@ abstract class AbstractFilter implements FilterInterface
             }
         }
 
-        return new NullFilter; // impossible to detect
+        return new NullFilter; // impossível de detectar
     }
 }

@@ -68,7 +68,7 @@ class AbstractFilterTest extends \PHPUnit_Framework_TestCase
 
     public function testGetColumnSearchs()
     {
-        $columns = array(new Searching('foo search', false, 'foo'), new Searching('bar search', false, 'bar'));
+        $columns = array(new Searching('foo search', 'foo'), new Searching('bar search', 'bar'));
         $this->mockFilter->setColumnSearchs($columns);
 
         $this->assertEquals($columns, $this->mockFilter->getColumnSearchs());

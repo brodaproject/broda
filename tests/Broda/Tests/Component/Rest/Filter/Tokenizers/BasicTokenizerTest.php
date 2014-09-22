@@ -83,7 +83,7 @@ class BasicTokenizerTest extends BaseTokenizerTest
     public function searchsProviderCustomWhitespaces()
     {
         // whitespaces: a, B
-        // lagenda: '|' whitespace
+        // legenda: '|' whitespace
         return array(
             //     |     |
             array('abcdefabc', array('bcdef', 'bc')),
@@ -91,8 +91,8 @@ class BasicTokenizerTest extends BaseTokenizerTest
             array('não mistura acentos', array('não mistur', ' ', 'centos')),
             //             |                         |||
             array('minuscula e MAIUSCULA tem diferençaBB', array('minuscul', ' e MAIUSCULA tem diferenç')),
-            //                           |               |
-            array('   outros tipos de espaço são considerados  ', array('   outros tipos de esp', 'ço são consider', 'dos  ')),
+            //                             |               |
+            array("   outros\ttipos\rde espaço são considerados  ", array("   outros\ttipos\rde esp", 'ço são consider', 'dos  ')),
             //                     |         |    ||
             array('"quotes consideram whitespaces aB"', array('quotes consideram whitespaces aB')),
             //     |||||||||||||||

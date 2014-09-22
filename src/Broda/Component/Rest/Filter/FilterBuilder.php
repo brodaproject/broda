@@ -206,7 +206,7 @@ class FilterBuilder implements FilterBuilderInterface
         if (isset($this->outputCallback)) $filter->setOutputCallback($this->outputCallback);
         if (isset($this->firstResult)) $filter->setFirstResult($this->firstResult);
         if (isset($this->maxResults)) $filter->setMaxResults($this->maxResults);
-        if (isset($this->globalSearch)) $filter->setGlobalSearch(new Searching($this->globalSearch, true));
+        if (isset($this->globalSearch)) $filter->setGlobalSearch(new Searching($this->globalSearch));
 
         $columns = array_map(function ($colData) {
             $col = new Column($colData['name'], $colData['data']);

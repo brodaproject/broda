@@ -5,6 +5,8 @@ namespace Broda\Component\Rest\Filter;
 /**
  * Classe DataTableFilter
  *
+ * TODO: implementar ErrorInformableInterface (ver http://datatables.net/manual/server-side)
+ *
  * @author raphael
  */
 class DataTableFilter extends AbstractFilter implements TotalizableInterface
@@ -43,8 +45,8 @@ class DataTableFilter extends AbstractFilter implements TotalizableInterface
             foreach ((array)$request['columns'] as $col) {
 
                 if ($col['search']['value']) {
-                    $colSearch = new Param\Searching($col['search']['value'],
-                        (bool)$col['search']['regex'], $col['name']);
+                    $colSearch = new Param\Searching($col['search']['value'], $col['name']);
+                    $colSearch->setRegex((bool)$col['search']['regex']);
 
                     $this->columnSearchs[] = $colSearch;
                 }
@@ -55,7 +57,8 @@ class DataTableFilter extends AbstractFilter implements TotalizableInterface
         if (isset($request['search']) && isset($request['search']['value'])) {
             $search = $request['search']['value'] ?: '';
 
-            $this->globalSearch = new Param\Searching($search, false);
+            $this->globalSearch = new Param\Searching($search);
+            $this->globalSearch->setRegex((bool)$request['search']['regex']);
         }
 
         // defining orderings

@@ -10,10 +10,10 @@ namespace Broda\Component\Rest\Filter\Tokenizers;
 interface TokenizerInterface
 {
     /**
-     * Processa uma string e transforma num array de strings
+     * Processa uma string e transforma num array de strings.
      * 
-     * @param string $string
-     * @return string[]
+     * @param string $string String a ser "tokenizada"
+     * @return string[] Array com os tokens
      */
     function tokenize($string);
 }

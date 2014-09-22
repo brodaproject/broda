@@ -3,10 +3,10 @@
 namespace Broda\Component\Rest\Filter;
 
 /**
- * Interface TotalizableInterface
- *
  * Todas os filtros que retornam ou precisam do total de registros devem
  * implementar esta interface.
+ *
+ * TODO melhorar essa doc
  *
  * @author raphael
  */
