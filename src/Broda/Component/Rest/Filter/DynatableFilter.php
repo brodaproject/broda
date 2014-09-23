@@ -5,96 +5,112 @@ namespace Broda\Component\Rest\Filter;
 use Symfony\Component\HttpFoundation\ParameterBag;
 
 /**
- * Classe DynatableFilter
+ * Filter para o Dynatable
  *
- * TODO: terminar e entender melhor como é esse dynatable
- * TODO: criar uma classe abstrata de plugins de tables
- *
+ * @link http://www.dynatable.com/
  * @author raphael
  */
-class DynatableFilter extends AbstractFilter
+class DynatableFilter extends AbstractFilter implements TotalizableInterface
 {
-
-    /**
-     *
-     * @var array
-     */
-    protected $params;
 
     protected $totalRecords = 0;
 
     protected $totalFiltered = 0;
 
-    protected $ajaxSrc = 'records';
-
     public function __construct(array $request, array $columns = array())
     {
-        $this->params = $request;
+        if (isset($request['offset'])) {
+            $this->firstResult = (int)$request['offset'];
+        }
+        if (isset($request['perPage'])) {
+            // maximo de 50 linhas
+            $this->maxResults = min(50, (int)$request['perPage'] ?: 30);
+        }
 
-        $this->firstResult = (int)$request['offset'];
-        $this->maxResults = min(50, (int)$request['perPage'] ?: 30); // max 50 lines per request;
+        $columns = empty($columns)
+            ? static::$defaultColumns
+            : static::normalizeColumns($columns);
 
-        $this->columns = empty($columns) ? static::$defaultColumns : static::normalizeColumns($columns);
-        // FIZ ATÉ AQUI, CONTINUAR
-
-        $orders = $request->get('sorts', array());
-
-        // defining columns and searchings
-        foreach ($columns as $col) {
-            $column = new Param\Column($col['name'], $col['data']);
-            $column->setSearchable((bool)$col['searchable']);
-            $column->setOrderable((bool)$col['orderable']);
-
-            $this->columns[] = $column;
-
-            if ($col['search']['value']) {
-                $colSearch = new Param\Searching($col['search']['value'],
-                        (bool)$col['search']['regex'], $col['name']);
-
-                $this->columnSearchs[] = $colSearch;
+        // definindo global searchs e column searchs
+        $this->columns = $columns;
+        if (isset($request['queries'])) {
+            foreach ((array)$request['queries'] as $type => $value) {
+                if ($value) {
+                    if ($type === 'search') {
+                        // global search
+                        $this->globalSearch = new Param\Searching($value);
+                    } else {
+                        // column search
+                        $this->columnSearchs[] = new Param\Searching($value, $type);
+                    }
+                }
             }
         }
 
-        // defining search all
-        if ($request->get('search[value]', null, true)) {
-            $search = $request->get('search[value]', '', true);
-
-            $this->globalSearch = new Param\Searching($search, false);
-        }
-
-        // defining orderings
-        $i = count($orders);
-        while ($i--) {
-            $field = $orders[$i]['column'];
-            $dir = $orders[$i]['dir'];
-
-            $this->orderings[] = new Param\Ordering($this->columns[$field], $dir);
+        // definindo ordenações
+        foreach ((array)$request['sorts'] as $ord => $dir) {
+            if ($this->hasColumn($ord)) {
+                $this->orderings[] = new Param\Ordering($this->getColumn($ord), $dir);
+            }
         }
     }
 
-    public function setTotalRecords($total)
+    /**
+     * {@inheritdoc}
+     */
+    public function setTotalRecords($total, $totalFiltered = null)
     {
+        $totalFiltered = isset($totalFiltered) ? $totalFiltered : $total;
         $this->totalRecords = (int)$total;
-        $this->totalFiltered = (int)$total;
-    }
-
-    public function setTotalFilteredRecords($totalFiltered)
-    {
         $this->totalFiltered = (int)$totalFiltered;
     }
 
-    public function setAjaxSrc($ajaxSrc)
+    /**
+     * {@inheritdoc}
+     */
+    public function getTotalRecords()
     {
-        $this->ajaxSrc = $ajaxSrc;
+        return $this->totalRecords;
     }
 
+    /**
+     * {@inheritdoc}
+     */
+    public function getTotalFilteredRecords()
+    {
+        return $this->totalFiltered;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function createFilterForTotalRecords()
+    {
+        $newFilter = clone $this;
+        $newFilter->clearSearchs();
+        $newFilter->clearLimits();
+        return $newFilter;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function createFilterForTotalFilteredRecords()
+    {
+        $newFilter = clone $this;
+        $newFilter->clearLimits();
+        return $newFilter;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function getOutputResponse($output)
     {
-        $a = $this->ajaxSrc;
         return array(
             'totalRecordCount' => $this->totalRecords,
             'queryRecordCount' => $this->totalFiltered,
-            $a => $output
+            'records' => $output
         );
     }
 

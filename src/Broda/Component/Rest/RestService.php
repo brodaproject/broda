@@ -3,13 +3,13 @@
 namespace Broda\Component\Rest;
 
 use Broda\Component\Rest\Filter\ErrorInformableInterface;
-use Broda\Component\Rest\Filter\Expr as FilterExpr;
 use Broda\Component\Rest\Filter\FilterInterface;
+use Broda\Component\Rest\Filter\TotalizableInterface;
+use Broda\Component\Rest\Filter\Expr as FilterExpr;
+use Broda\Component\Rest\Filter\Param as FilterParam;
 use Broda\Component\Rest\Filter\Incorporator\IncorporatorFactory;
 use Broda\Component\Rest\Filter\Incorporator\IncorporatorInterface;
 use Broda\Component\Rest\Filter\Incorporator\JoinableIncorporatorInterface;
-use Broda\Component\Rest\Filter\Param as FilterParam;
-use Broda\Component\Rest\Filter\TotalizableInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use JMS\Serializer\Serializer;
 use JMS\Serializer\SerializerBuilder;
@@ -17,6 +17,20 @@ use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Classe RestService
+ *
+ * TODO: implementar um modo de pesquisa "case-insensitive"
+ *       Há um grande desafio em implementar essa feature, visto
+ *       que os Selectables tem diferentes formas de processarem os
+ *       Criterias (SqlExpressionVisitor, ClosureExpressionVisitor, etc)
+ *       e nenhum deles oferece suporte para case-insensitive.
+ *       Com os QueryBuilder é um pouco mais fácil, já que eu
+ *       tenho o controle do ExpressionVisitor dos dois por conta do
+ *       fieldMap.
+ *       Eu poderia usar um ArrayCollection próprio, com suporte a
+ *       um ExpressionVisitor que suporte case-insensitive, porém
+ *       outros Selectables como o PersistentCollection e EntityRepository
+ *       perderão seu aspecto chave que é usar SQL para filtrar seus
+ *       registros antes de passar para memória do PHP...
  *
  * @author Raphael Hardt <raphael.hardt@gmail.com>
  */
@@ -147,7 +161,8 @@ class RestService
      * @param FilterInterface $filter
      * @param array           $fieldMap
      * @return array
-     * @throws \UnexpectedValueException
+     * @throws \UnexpectedValueException Se não encontrar o Incorporator
+     * @throws \Exception                Se houver algum erro
      */
     public function filter($collection, FilterInterface $filter, array $fieldMap = array())
     {

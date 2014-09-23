@@ -2,11 +2,9 @@
 
 namespace Broda\Component\Rest\Filter;
 
-
 use Broda\Component\Rest\Filter\Param\Column;
 use Broda\Component\Rest\Filter\Param\Ordering;
 use Broda\Component\Rest\Filter\Param\Searching;
-use Doctrine\Common\Collections\Criteria;
 
 class FilterBuilder implements FilterBuilderInterface
 {
@@ -20,16 +18,29 @@ class FilterBuilder implements FilterBuilderInterface
     private $isTotalizable = false;
     private $outputCallback;
 
+    /**
+     * Criador.
+     *
+     * @return self
+     */
     public static function create()
     {
         return new static();
     }
 
     /**
-     * {@inheritdoc}
+     * Adiciona uma coluna.
+     *
+     * @param string $name       Nome da coluna. Geralmente é o nome do campo no banco de dados
+     * @param string $data       Nome alternativo. Geralmente é o nome da coluna no json/xml
+     * @param bool   $orderable  Se a coluna é ordenável ou não
+     * @param bool   $searchable Se a coluna é pesquisável ou não pelo global search
+     * @return self
+     * @throws \InvalidArgumentException Se o nome da coluna for inválido
      */
     public function addColumn($name, $data = null, $orderable = true, $searchable = true)
     {
+        $this->validateCol($name);
         $this->columns[$name] = array(
             'name' => $name,
             'data' => $data,
@@ -41,13 +52,28 @@ class FilterBuilder implements FilterBuilderInterface
     }
 
     /**
-     * {@inheritdoc}
+     * Adiciona uma subcoluna.
+     *
+     * As subcolunas são usadas pelos searchs para pesquisarem também por
+     * elas quando usadas na pesquisa.
+     *
+     * Mais informações em {@link Param\Column}
+     *
+     * @param string $columnName Nome da coluna pai.
+     * @param string $name       Nome da coluna. Geralmente é o nome do campo no banco de dados
+     * @param string $data       Nome alternativo. Geralmente é o nome da coluna no json/xml
+     * @param bool   $orderable  Se a coluna é ordenável ou não
+     * @param bool   $searchable Se a coluna é pesquisável ou não pelo global search
+     * @return self
+     * @throws \InvalidArgumentException Se o nome da coluna for inválido
+     * @throws \LogicException           Se a coluna pai não existir
      */
     public function addSubColumn($columnName, $name, $data = null, $orderable = true, $searchable = true)
     {
         if (!isset($this->columns[$columnName])) {
-            throw new \UnexpectedValueException(sprintf('Coluna %s não existe. Defina primeiro.', $columnName));
+            throw new \LogicException(sprintf('Coluna %s não existe. Defina-a primeiro.', $columnName));
         }
+        $this->validateCol($name);
         $this->columns[$columnName]['subcolumns'][] = array(
             'name' => $name,
             'data' => $data,
@@ -58,7 +84,23 @@ class FilterBuilder implements FilterBuilderInterface
     }
 
     /**
-     * {@inheritdoc}
+     * Define as colunas.
+     *
+     * Deve ser um array no seguinte formato:
+     * [
+     *     0: {
+     *         name: ...,
+     *         data: ...,
+     *         ordenable: ...,
+     *         searchable: ...,
+     *         subcolumns: [ ... ]
+     *     },
+     *     ...
+     * ]
+     *
+     * @param array $columns
+     * @return self
+     * @throws \InvalidArgumentException Se o nome da coluna for inválido
      */
     public function setColumns(array $columns)
     {
@@ -70,18 +112,18 @@ class FilterBuilder implements FilterBuilderInterface
         foreach ($filtered as $col) {
             $this->addColumn(
                 $col['name'],
-                $col['data'],
-                $col['orderable'],
-                $col['searchable']
+                isset($col['data']) ? $col['data'] : null,
+                isset($col['orderable']) ? $col['orderable'] : true,
+                isset($col['searchable']) ? $col['searchable'] : true
             );
             if (isset($col['subcolumns'])) {
                 foreach ($col['subcolumns'] as $subcol) {
-                    $this->addColumn(
+                    $this->addSubColumn(
                         $col['name'],
                         $subcol['name'],
-                        $subcol['data'],
-                        $subcol['orderable'],
-                        $subcol['searchable']
+                        isset($subcol['data']) ? $subcol['data'] : null,
+                        isset($subcol['orderable']) ? $subcol['orderable'] : true,
+                        isset($subcol['searchable']) ? $subcol['searchable'] : true
                     );
                 }
             }
@@ -90,26 +132,69 @@ class FilterBuilder implements FilterBuilderInterface
     }
 
     /**
-     * {@inheritdoc}
+     * Adiciona uma pesquisa individual por coluna.
+     *
+     * @param string $name   Nome da coluna.
+     * @param string $search Pesquisa.
+     * @return self
+     * @throws \InvalidArgumentException Se a pesquisa estiver vazia
+     * @throws \InvalidArgumentException Se o nome da coluna for inválido
      */
     public function addColumnSearch($name, $search)
     {
+        if (empty($search)) {
+            throw new \InvalidArgumentException('O valor a ser pesquisado não pode ser vazio.');
+        }
+
+        $this->validateCol($name);
         $this->columnSearchs[] = array(
             'name' => $name,
             'searchValue' => $search,
         );
+
+        if (!isset($this->columns[$name])) {
+            $this->addColumn($name);
+        }
         return $this;
     }
 
     /**
-     * {@inheritdoc}
+     * Define as pesquisas individuais para colunas.
      *
-     * TODO: permitir o formato (nome => pesquisa, ...)
+     * Deve ser um array no seguinte formato:
+     * [
+     *     0: {
+     *         name: ...,
+     *         searchValue: ...,
+     *     },
+     *     ...
+     * ]
+     *
+     * Ou:
+     *
+     * {
+     *     name: searchValue,
+     *     ...
+     * }
+     *
+     * @param array $searchs
+     * @return self
+     * @throws \InvalidArgumentException Se o nome da coluna for inválido
      */
     public function setColumnSearchs(array $searchs)
     {
+        if (!is_numeric(key($searchs))) {
+            // arruma array se vier no formato (nome => pesquisa, ...)
+            $tmp = array();
+            foreach ($searchs as $name => $search) {
+                $tmp[] = array('name' => $name, 'searchValue' => $search);
+            }
+            $searchs = $tmp;
+        }
+
         $filtered = array_filter($searchs, function ($elem) {
-            return is_array($elem) && isset($elem['name']);
+            return is_array($elem) && isset($elem['name'])
+                && (!empty($elem['searchValue']) || !empty($elem['search']));
         });
 
         $this->columnSearchs = array();
@@ -123,7 +208,10 @@ class FilterBuilder implements FilterBuilderInterface
     }
 
     /**
-     * {@inheritdoc}
+     * Define o index do primeiro registro a ser mostrado (offset).
+     *
+     * @param int $firstResult
+     * @return self
      */
     public function setFirstResult($firstResult)
     {
@@ -132,7 +220,10 @@ class FilterBuilder implements FilterBuilderInterface
     }
 
     /**
-     * {@inheritdoc}
+     * Define o número de registros a serem mostrados (limit).
+     *
+     * @param int $maxResults
+     * @return self
      */
     public function setMaxResults($maxResults)
     {
@@ -141,7 +232,10 @@ class FilterBuilder implements FilterBuilderInterface
     }
 
     /**
-     * {@inheritdoc}
+     * Define uma pesquisa global (em todas as colunas pesquisáveis).
+     *
+     * @param string $globalSearch
+     * @return self
      */
     public function setGlobalSearch($globalSearch)
     {
@@ -150,29 +244,82 @@ class FilterBuilder implements FilterBuilderInterface
     }
 
     /**
-     * {@inheritdoc}
+     * Adiciona uma ordenação.
+     *
+     * @param string $name      Noma da coluna.
+     * @param int    $direction Direção. Use 1 para 'ASC' e -1 para 'DESC'
+     * @return self
+     * @throws \InvalidArgumentException Se o nome da coluna for inválido
      */
-    public function addOrdering($name, $direction = Criteria::ASC)
+    public function addOrdering($name, $direction = 1)
     {
+        $this->validateCol($name);
         $this->orders[] = array(
             'name' => $name,
             'dir' => $direction,
         );
+
+        if (!isset($this->columns[$name])) {
+            $this->addColumn($name);
+        }
+
         return $this;
     }
 
     /**
-     * {@inheritdoc}
+     * Define as ordenações.
      *
-     * TODO: permitir o formato (nome => dir, ...)
+     * Deve ser um array no seguinte formato:
+     * [
+     *     0: {
+     *         name: ...,
+     *         dir: ...,
+     *     },
+     *     ...
+     * ]
+     *
+     * Ou:
+     *
+     * {
+     *     name: dir,
+     *     ...
+     * }
+     *
+     * @param array $orderings
+     * @return self
+     * @throws \InvalidArgumentException Se o nome da coluna for inválido
      */
     public function setOrderings(array $orderings)
     {
-        //TODO
+        if (!is_numeric(key($orderings))) {
+            // arruma array se vier no formato (nome => dir, ...)
+            $tmp = array();
+            foreach ($orderings as $name => $dir) {
+                $tmp[] = array('name' => $name, 'dir' => $dir);
+            }
+            $orderings = $tmp;
+        }
+
+        $filtered = array_filter($orderings, function ($elem) {
+            return is_array($elem) && isset($elem['name']);
+        });
+
+        $this->orders = array();
+        foreach ($filtered as $col) {
+            $this->addOrdering(
+                $col['name'],
+                isset($col['dir']) ? $col['dir'] : 1
+            );
+        }
+        return $this;
     }
 
     /**
-     * {@inheritdoc}
+     * Define se o filter terá informações do total filtrado e
+     * total de registros.
+     *
+     * @param bool $bool
+     * @return self
      */
     public function setTotalizable($bool)
     {
@@ -181,13 +328,14 @@ class FilterBuilder implements FilterBuilderInterface
     }
 
     /**
-     * {@inheritdoc}
+     * Define o callback do output deste filtro.
+     *
+     * @param callable $callback
+     * @return self
      */
     public function setOutputCallback($callback)
     {
-        if (!is_callable($callback)) {
-            throw new \InvalidArgumentException(sprintf('A callable is required, %s given', gettype($callback)));
-        }
+        $this->validateCallback($callback);
         $this->outputCallback = $callback;
         return $this;
     }
@@ -227,7 +375,7 @@ class FilterBuilder implements FilterBuilderInterface
         }, $this->orders);
 
         $columnSearchs = array_map(function ($colData) {
-            return new Searching($colData['searchValue'], true, $colData['name']);
+            return new Searching($colData['searchValue'], $colData['name']);
         }, $this->columnSearchs);
 
         $filter->setColumns($columns);
@@ -235,6 +383,26 @@ class FilterBuilder implements FilterBuilderInterface
         $filter->setColumnSearchs($columnSearchs);
 
         return $filter;
+    }
+
+    /**
+     * @internal Valida se o nome da coluna atende os padrões
+     */
+    private function validateCol($name)
+    {
+        if (empty($name) || is_numeric($name)) {
+            throw new \InvalidArgumentException(sprintf('O nome da coluna deve ser uma string não vazia e não numérica, %s dado.', gettype($name)));
+        }
+    }
+
+    /**
+     * @internal Valida se o callback é um callable válido
+     */
+    private function validateCallback($callback)
+    {
+        if (!is_callable($callback)) {
+            throw new \InvalidArgumentException(sprintf('O callback de output deve ser um callable, %s dado.', gettype($callback)));
+        }
     }
 
 } 

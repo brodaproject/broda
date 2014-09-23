@@ -3,10 +3,11 @@
 namespace Broda\Component\Rest\Filter;
 
 /**
- * Classe DataTableFilter
+ * Filtro para DataTables
  *
  * TODO: implementar ErrorInformableInterface (ver http://datatables.net/manual/server-side)
  *
+ * @link http://datatables.net/
  * @author raphael
  */
 class DataTableFilter extends AbstractFilter implements TotalizableInterface
@@ -33,11 +34,21 @@ class DataTableFilter extends AbstractFilter implements TotalizableInterface
     {
         $this->params = $request;
 
-        if (isset($request['start'])) $this->firstResult = (int)$request['start'];
-        if (isset($request['length'])) $this->maxResults = min(50, (int)$request['length'] ?: 30); // max 50 lines per request;
+        if (isset($request['start'])) {
+            $this->firstResult = (int)$request['start'];
+        }
+        if (isset($request['length'])) {
+            // max 50 lines per request
+            $this->maxResults = min(50, (int)$request['length'] ?: 30);
+        }
 
-        $columns = empty($request['columns']) ? static::$defaultColumns : static::normalizeColumns($request['columns']);
-        $orders = isset($request['order']) ? $request['order'] : array();
+        $columns = empty($request['columns'])
+            ? static::$defaultColumns
+            : static::normalizeColumns($request['columns']);
+
+        $orders = isset($request['order'])
+            ? $request['order']
+            : array();
 
         // defining columns and searchings
         $this->columns = $columns;

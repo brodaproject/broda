@@ -8,8 +8,6 @@ use Broda\Component\Rest\Filter\Param\Searching;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
- * Classe AbstractFilter
- *
  * Base para outros filters.
  * O programador pode extender desta classe para facilitar ou implementar a interface.
  *
@@ -18,10 +16,10 @@ use Symfony\Component\HttpFoundation\Request;
  * em que o request foi feito
  *
  * @example
- * function getAllRecords(Request $request)
+ * function getAllRecords()
  * {
  *    AbstractFilter::setDefaultColumns(array('col1', 'col2'));
- *    $filter = AbstractFilter::detectFilterByRequest($request); // detecta filtro correto
+ *    $filter = AbstractFilter::detectFilterByRequest($_REQUEST); // detecta filtro correto
  *
  *    $repo = $this->em->getRepository('ModelX'); // ou qualquer Selectable
  *    $filteredRegs = $this->restService->filter($repo, $filter);
@@ -29,49 +27,44 @@ use Symfony\Component\HttpFoundation\Request;
  *    return RestResponse($filteredRegs);
  * }
  *
+ * TODO: arrumar doc
+ *
  * @author raphael
  */
 abstract class AbstractFilter implements FilterInterface
 {
 
     /**
-     *
      * @var Column[]
      */
     protected static $defaultColumns = array();
 
     /**
-     *
      * @var Column[]
      */
     protected $columns = array();
 
     /**
-     *
      * @var Ordering[]
      */
     protected $orderings = array();
 
     /**
-     *
      * @var Searching
      */
     protected $globalSearch;
 
     /**
-     *
      * @var Searching[]
      */
     protected $columnSearchs = array();
 
     /**
-     *
      * @var int
      */
     protected $firstResult = 0;
 
     /**
-     *
      * @var int
      */
     protected $maxResults = null;
@@ -114,7 +107,7 @@ abstract class AbstractFilter implements FilterInterface
         $onlyColumns = array_filter($columns, function ($elem) {
             return ($elem instanceof Column);
         });
-        $this->columns = $onlyColumns;
+        $this->columns = array_values($onlyColumns);
         return $this;
     }
 
@@ -135,7 +128,7 @@ abstract class AbstractFilter implements FilterInterface
             // somente searchs que possuem nome de coluna
             return ($elem instanceof Searching) && null !== $elem->getColumnName();
         });
-        $this->columnSearchs = $onlyColumns;
+        $this->columnSearchs = array_values($onlyColumns);
         return $this;
     }
 
@@ -182,10 +175,7 @@ abstract class AbstractFilter implements FilterInterface
     }
 
     /**
-     * TODO: doc
-     *
-     * @param int $maxResults
-     * @return self
+     * {@inheritdoc}
      */
     public function setMaxResults($maxResults)
     {
@@ -209,7 +199,7 @@ abstract class AbstractFilter implements FilterInterface
         $onlyOrderings = array_filter($orderings, function ($elem) {
             return ($elem instanceof Ordering);
         });
-        $this->orderings = $onlyOrderings;
+        $this->orderings = array_values($onlyOrderings);
         return $this;
     }
 
@@ -290,33 +280,36 @@ abstract class AbstractFilter implements FilterInterface
     /**
      * Detecta o filtro mais adequado para o tipo de request que veio
      *
-     * @param Request $request
+     * @param array|Request $request $_REQUEST, $_POST ou $_GET, ou um objeto Request
      * @return FilterInterface|null
      */
-    public static function detectFilterByRequest(Request $request)
+    public static function detectFilterByRequest($request)
     {
-        if ($request->getMethod() == 'POST') {
-            // datatables
-            if ($request->request->get('draw')) {
-                // 1.10 >=
-                return new DataTableFilter($request->request->all());
-            } elseif ($request->request->get('sEcho')) {
-                // 1.9 legacy or 1.10 em modo de compatibilidade
-                return new DataTableLegacyFilter($request->request->all());
-            }
-        } else {
-            if ($request->query->get('limit') && $request->query->get('offset', 1)) {
-                // defina as defaultColumns se você vai usar a detecção automatica
-                // ou senão o search global e os orders não irão funcionar
-                // (só para as colunas definidas como filtros individuais)
-                return new BootstrapTableFilter($request->query->all());
+        // suporte para o Request do HttpFoundation
+        if (class_exists('Symfony\Component\HttpFoundation\Request', false)
+            && $request instanceof Request) {
+            $request = array_merge($request->query->all(), $request->request->all());
+        }
 
-            } elseif ($request->query->count()) {
-                // defina as defaultColumns se você vai usar a detecção automatica
-                // ou senão o search global e os orders não irão funcionar
-                // (só para as colunas definidas como filtros individuais)
-                return new DefaultFilter($request->query->all());
-            }
+        if (isset($request['draw'])) {
+            // datatables 1.10 >=
+            return new DataTableFilter($request);
+        } elseif (DataTableLegacyFilter::isDataTableLegacy($request)) {
+            // datatables 1.9 legacy ou 1.10 em modo de compatibilidade
+            return new DataTableLegacyFilter($request);
+        } elseif (isset($request['dynatable'])
+            || (isset($request['page']) && isset($request['perPage']))
+            || (count($request['queries']) || count($request['sorts']))
+        ) {
+            // dynatable
+            // defina as defaultColumns se você vai usar a detecção automatica
+            // ou senão o search global e os orders não irão funcionar
+            return new DynatableFilter($request);
+        } elseif (count($request)) {
+            // defina as defaultColumns se você vai usar a detecção automatica
+            // ou senão o search global e os orders não irão funcionar
+            // (só para as colunas definidas como filtros individuais)
+            return new BasicFilter($request);
         }
 
         return new NullFilter; // impossível de detectar

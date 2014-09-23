@@ -6,16 +6,23 @@ Uso mais simples:
 .. code-block:: php
 
     // controller
-    function indexAction(Request $request)
+    function indexAction()
     {
         // dados quaisquer de algum repositório
         $collection = /*...*/;
 
-        $filter = AbstractFilter::detectFilterByRequest($request);
+        $filter = AbstractFilter::detectFilterByRequest($_REQUEST);
 
         return new RestResponse($rest->filter($collection, $filter));
     }
 
+Se você tiver instalado o `HttpFoundation`_, você pode passar o objeto
+``Request``:
+
+.. code-block:: php
+
+    $request = Request::createFromGlobal();
+    $filter = AbstractFilter::detectFilterByRequest($request);
 
 O ``$collection`` é qualquer coleção de dados em formato de ``array`` ou
 que implemente a interface ``Doctrine\Common\Collections\Selectable``.
@@ -202,3 +209,6 @@ Abaixo um exemplo de como criar um incorporator e usá-lo na sua aplicação:
     $filter = /*...*/ // FilterInterface
 
     $restResponse = $rest->filter($users, $filter);
+
+
+.. _`HttpFoundation`: http://symfony.com/components/HttpFoundation

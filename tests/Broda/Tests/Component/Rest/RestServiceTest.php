@@ -3,7 +3,7 @@ namespace Broda\Tests\Component\Rest;
 
 use Broda\Component\Rest\Filter\AbstractFilter;
 use Broda\Component\Rest\Filter\DataTableFilter;
-use Broda\Component\Rest\Filter\DefaultFilter;
+use Broda\Component\Rest\Filter\BasicFilter;
 use Broda\Component\Rest\Filter\FilterInterface;
 use Broda\Component\Rest\Filter\NullFilter;
 use Broda\Component\Rest\Filter\TotalizableInterface;
@@ -111,7 +111,7 @@ class RestServiceTest extends \PHPUnit_Framework_TestCase
     {
         $this->markTestSkipped('Até mudar tudo para o Incorporator, repensar se vai poder pegar o criteria direto');
 
-        $filter = new DefaultFilter(array('start' => 2));
+        $filter = new BasicFilter(array('start' => 2));
 
         $criteria = $this->rest->getFilteringCriteria($filter);
         $emptyCriteria = Criteria::create()
@@ -127,7 +127,7 @@ class RestServiceTest extends \PHPUnit_Framework_TestCase
     {
         $this->markTestSkipped('Até mudar tudo para o Incorporator, repensar se vai poder pegar o criteria direto');
 
-        $filter = new DefaultFilter(array('len' => 3));
+        $filter = new BasicFilter(array('len' => 3));
 
         $criteria = $this->rest->getFilteringCriteria($filter);
         $emptyCriteria = Criteria::create()
@@ -143,7 +143,7 @@ class RestServiceTest extends \PHPUnit_Framework_TestCase
     {
         $this->markTestSkipped('Até mudar tudo para o Incorporator, repensar se vai poder pegar o criteria direto');
 
-        $filter = new DefaultFilter(array('order' => 'name'), array('name', 'age'));
+        $filter = new BasicFilter(array('order' => 'name'), array('name', 'age'));
 
         $criteria = $this->rest->getFilteringCriteria($filter);
         $emptyCriteria = Criteria::create()
@@ -158,7 +158,7 @@ class RestServiceTest extends \PHPUnit_Framework_TestCase
     {
         $this->markTestSkipped('Até mudar tudo para o Incorporator, repensar se vai poder pegar o criteria direto');
 
-        $filter = new DefaultFilter(array('order' => array('name', 'age')), array('name', 'age'));
+        $filter = new BasicFilter(array('order' => array('name', 'age')), array('name', 'age'));
 
         $criteria = $this->rest->getFilteringCriteria($filter);
         $emptyCriteria = Criteria::create()
@@ -181,7 +181,7 @@ class RestServiceTest extends \PHPUnit_Framework_TestCase
             array('name' => 'age'),
             array('name' => 'surname', 'subcolumns' => array('name')),
         );
-        $filter = new DefaultFilter($searchs, $columns);
+        $filter = new BasicFilter($searchs, $columns);
 
         $criteria = $this->rest->getFilteringCriteria($filter);
 
@@ -373,8 +373,8 @@ class RestServiceTest extends \PHPUnit_Framework_TestCase
     {
         AbstractFilter::setDefaultColumns(array('name', 'age'));
         return array(
-            array(new DefaultFilter(array('s' => 'jo'))),
-            array(new DefaultFilter(array('name' => 'jo'))),
+            array(new BasicFilter(array('s' => 'jo'))),
+            array(new BasicFilter(array('name' => 'jo'))),
             array(new DataTableFilter(array('search' => array('value' => 'jo'), 'draw' => 1))),
         );
     }
