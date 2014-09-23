@@ -10,7 +10,7 @@ namespace Broda\Component\Rest\Filter;
  * @link http://datatables.net/
  * @author raphael
  */
-class DataTableFilter extends AbstractFilter implements TotalizableInterface
+class DataTableFilter extends AbstractFilter implements TotalizableInterface, ErrorInformableInterface
 {
 
     /**
@@ -24,6 +24,8 @@ class DataTableFilter extends AbstractFilter implements TotalizableInterface
     protected $totalFiltered = 0;
 
     protected $ajaxSrc = 'data';
+
+    protected $errorMessage;
 
     /**
      * Construtor
@@ -138,6 +140,22 @@ class DataTableFilter extends AbstractFilter implements TotalizableInterface
     }
 
     /**
+     * {@inheritdoc}
+     */
+    public function setErrorMessage($message)
+    {
+        $this->errorMessage = $message;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getErrorMessage()
+    {
+        return $this->errorMessage;
+    }
+
+    /**
      * Define o key do ajaxSrc do DataTable.
      *
      * @param $ajaxSrc
@@ -153,12 +171,18 @@ class DataTableFilter extends AbstractFilter implements TotalizableInterface
     public function getOutputResponse($output)
     {
         $a = $this->ajaxSrc;
-        return array(
+        $data = array(
             'draw' => (int)$this->params['draw'],
             'recordsTotal' => $this->totalRecords,
             'recordsFiltered' => $this->totalFiltered,
             $a => $output
         );
+
+        if (null !== $this->errorMessage) {
+            $data['error'] = $this->errorMessage;
+        }
+
+        return $data;
     }
 
 }
