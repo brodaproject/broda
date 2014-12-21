@@ -11,7 +11,7 @@ use Doctrine\ORM\Query\Expr as Expr;
 use Doctrine\ORM\Query\Parameter;
 
 /**
- *
+ * TODO doc
  */
 class OrmQueryExpressionVisitor extends AbstractQueryExpressionVisitor
 {

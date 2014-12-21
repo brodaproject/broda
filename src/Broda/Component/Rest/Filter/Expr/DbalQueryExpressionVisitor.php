@@ -7,10 +7,11 @@ use Doctrine\Common\Collections\Expr\CompositeExpression;
 use Doctrine\Common\Collections\Expr\Value;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Query\Expression\CompositeExpression as DbalCompositeExpression;
 use Doctrine\DBAL\Query\Expression\ExpressionBuilder;
 
 /**
- *
+ * TODO doc
  */
 class DbalQueryExpressionVisitor extends AbstractQueryExpressionVisitor
 {
@@ -68,10 +69,10 @@ class DbalQueryExpressionVisitor extends AbstractQueryExpressionVisitor
     {
         switch($type) {
             case CompositeExpression::TYPE_AND:
-                return new \Doctrine\DBAL\Query\Expression\CompositeExpression(\Doctrine\DBAL\Query\Expression\CompositeExpression::TYPE_AND, $expressionList);
+                return new DbalCompositeExpression(DbalCompositeExpression::TYPE_AND, $expressionList);
 
             case CompositeExpression::TYPE_OR:
-                return new \Doctrine\DBAL\Query\Expression\CompositeExpression(\Doctrine\DBAL\Query\Expression\CompositeExpression::TYPE_OR, $expressionList);
+                return new DbalCompositeExpression(DbalCompositeExpression::TYPE_OR, $expressionList);
 
             default:
                 throw new \RuntimeException("Unknown composite " . $type);

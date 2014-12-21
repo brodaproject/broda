@@ -5,6 +5,7 @@ namespace Broda\Component\Rest\Filter\Incorporator;
 use Broda\Component\Rest\Filter\Expr\OrmQueryExpressionVisitor;
 use Broda\Component\Rest\Filter\FilterInterface;
 
+use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 
 
@@ -16,13 +17,13 @@ class OrmQueryBuilderIncorporator extends SelectableIncorporator implements Join
     /**
      * {@inheritdoc}
      */
-    public function incorporate($qb, FilterInterface $filter)
+    public function incorporate($collection, FilterInterface $filter)
     {
-        /* @var $qb QueryBuilder */
-        $qbFiltered = clone $qb;
-        $this->incorporateOrmQueryBuilder($qbFiltered, $filter);
+        /* @var $collection QueryBuilder */
+        $qb = clone $collection;
+        $this->incorporateOrmQueryBuilder($qb, $filter);
 
-        return $qbFiltered->getQuery()->getResult(\Doctrine\ORM\Query::HYDRATE_OBJECT);
+        return $qb->getQuery()->getResult(Query::HYDRATE_OBJECT);
     }
 
     /**
@@ -33,11 +34,11 @@ class OrmQueryBuilderIncorporator extends SelectableIncorporator implements Join
         /* @var $collection QueryBuilder */
         $rootAliases = $collection->getRootAliases();
 
-        $qbFilteredCount = clone $collection;
-        $qbFilteredCount->select($qbFilteredCount->expr()->count($rootAliases[0]));
-        $this->incorporateOrmQueryBuilder($qbFilteredCount, $filter);
+        $qb = clone $collection;
+        $qb->select($qb->expr()->count($rootAliases[0]));
+        $this->incorporateOrmQueryBuilder($qb, $filter);
 
-        return $qbFilteredCount->getQuery()->getSingleScalarResult();
+        return $qb->getQuery()->getSingleScalarResult();
     }
 
     /**

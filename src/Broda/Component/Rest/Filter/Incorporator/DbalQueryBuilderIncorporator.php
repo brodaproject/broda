@@ -16,29 +16,29 @@ class DbalQueryBuilderIncorporator extends SelectableIncorporator implements Joi
     /**
      * {@inheritdoc}
      */
-    public function incorporate($qb, FilterInterface $filter)
+    public function incorporate($collection, FilterInterface $filter)
     {
-        /* @var $qb QueryBuilder */
-        if ($qb->getType() !== QueryBuilder::SELECT) {
+        /* @var $collection QueryBuilder */
+        if ($collection->getType() !== QueryBuilder::SELECT) {
             throw new \LogicException("Só é permitido DBAL\\QueryBuilder do tipo SELECT");
         }
 
-        $qbFiltered = clone $qb;
-        $this->incorporateDbalQueryBuilder($qbFiltered, $filter);
+        $qb = clone $collection;
+        $this->incorporateDbalQueryBuilder($qb, $filter);
 
         /* @var $stmt \Doctrine\DBAL\Driver\Statement */
-        $stmt = $qbFiltered->execute();
+        $stmt = $qb->execute();
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
     public function count($collection, FilterInterface $filter)
     {
         /* @var $collection QueryBuilder */
-        $qbFilteredCount = clone $collection;
-        $qbFilteredCount->select('count(*)');
-        $this->incorporateDbalQueryBuilder($qbFilteredCount, $filter);
+        $qb = clone $collection;
+        $qb->select('count(*)');
+        $this->incorporateDbalQueryBuilder($qb, $filter);
 
-        return $qbFilteredCount->execute()->fetchColumn(0);
+        return $qb->execute()->fetchColumn(0);
     }
 
     /**
@@ -64,6 +64,7 @@ class DbalQueryBuilderIncorporator extends SelectableIncorporator implements Joi
     {
         $criteria = $this->getFilteringCriteria($filter);
 
+        // extraindo os rootAliases, pois o DBAL\QueryBuilder não tem
         $fromPart = $qb->getQueryPart('from');
         $rootAliases = array();
         foreach ($fromPart as $part) {
@@ -82,7 +83,6 @@ class DbalQueryBuilderIncorporator extends SelectableIncorporator implements Joi
             }
         }
 
-        // Overwrite limits only if they was set in criteria
         if (($firstResult = $criteria->getFirstResult()) !== null) {
             $qb->setFirstResult($firstResult);
         }

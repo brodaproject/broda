@@ -84,7 +84,7 @@ tabela "root".
 
     // aqui digo que se o filter pesquisar por 'login', ele irá
     // procurar no alias 'u', que é o usuário, e se pesquisar por 'name'
-    // ele irá pesquisar no alias 'g', que são os grupos do usuário
+    // ele irá pesquisar no alias 'g', que são os grupos do usuário.
     // se o campo não estiver mapeado, por padrão ele é direcionado
     // para o alias "root" (no caso, 'u')
     $fieldMap = array(
@@ -202,7 +202,7 @@ Abaixo um exemplo de como criar um incorporator e usá-lo na sua aplicação:
     }
 
     // index.php
-    $rest->addIncorporator('AppModelIncorporator');
+    $rest->addIncorporatorClass('AppModelIncorporator');
 
     $users = User::getCollection(); // retorna uma instancia AppModel
 

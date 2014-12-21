@@ -6,8 +6,6 @@ use Broda\Component\Rest\Filter\Param\Ordering;
 use Broda\Component\Rest\Filter\Param\Searching;
 
 /**
- * Interface FilterInterface
- *
  * Filters são classes que fazem uma filtragem básica dos registros para serem
  * retornados do REST. Ele irá definir os parâmetros para uma filtragem simples
  * (limitar registros, ordernar, busca por campo ou global), para que o RestService

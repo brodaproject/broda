@@ -167,6 +167,11 @@ class Searching
         return $this;
     }
 
+    /**
+     * Retorna o valor a ser buscado em um array de tokens.
+     *
+     * @return string[]
+     */
     public function getTokens()
     {
         return $this->getTokenizer()->tokenize($this->value);

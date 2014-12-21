@@ -9,6 +9,11 @@ use Doctrine\Common\Collections\Criteria;
 use Doctrine\Common\Collections\Expr\CompositeExpression;
 use Doctrine\Common\Collections\Selectable;
 
+/**
+ * TODO doc
+ *
+ * @author Raphael Hardt <raphael.hardt@gmail.com>
+ */
 class SelectableIncorporator implements IncorporatorInterface
 {
     /**
@@ -63,11 +68,11 @@ class SelectableIncorporator implements IncorporatorInterface
 
     /**
      * @internal
-     * @param FilterParam\Searching[] $columnSearchs
      * @param FilterInterface $filter
+     * @param FilterParam\Searching[] $columnSearchs
      * @return CompositeExpression
      */
-    private function getExpressionForColumnSearchs(array $columnSearchs, FilterInterface $filter)
+    private function getExpressionForColumnSearchs(FilterInterface $filter, array $columnSearchs)
     {
         $searchExprs = array();
         foreach ($columnSearchs as $col) {
@@ -120,13 +125,17 @@ class SelectableIncorporator implements IncorporatorInterface
 
     /**
      * @internal
-     * @param FilterParam\Searching $globalSearch
      * @param FilterInterface $filter
-     * @return CompositeExpression
+     * @param FilterParam\Searching $globalSearch
+     * @return CompositeExpression|null
      */
-    private function getExpressionForGlobalSearch(FilterParam\Searching $globalSearch,
-                                                  FilterInterface $filter)
+    private function getExpressionForGlobalSearch(FilterInterface $filter,
+                                                  FilterParam\Searching $globalSearch = null)
     {
+        if (null === $globalSearch) {
+            return null;
+        }
+
         $searchAllExprs = array();
         foreach ($filter->getColumns() as $col) {
             if (!$col->getSearchable()) continue;
@@ -155,11 +164,11 @@ class SelectableIncorporator implements IncorporatorInterface
 
     /**
      * @internal
-     * @param FilterParam\Ordering[] $orders
      * @param FilterInterface $filter
+     * @param FilterParam\Ordering[] $orders
      * @return array
      */
-    private function getOrderings(array $orders, FilterInterface $filter)
+    private function getOrderings(FilterInterface $filter, array $orders)
     {
         $orderings = array();
         foreach ($orders as $order) {
@@ -185,17 +194,15 @@ class SelectableIncorporator implements IncorporatorInterface
         $criteria = Criteria::create();
 
         $columnSearchs = $filter->getColumnSearchs();
-        $globalSearch = $filter->getGlobalSearch();
-        $orders = $filter->getOrderings();
-        $start = $filter->getFirstResult();
-        $length = $filter->getMaxResults();
+        $globalSearch  = $filter->getGlobalSearch();
+        $orders        = $filter->getOrderings();
+        $start         = $filter->getFirstResult();
+        $length        = $filter->getMaxResults();
 
         // constroi as expressões e os orderings
-        $orderings = $this->getOrderings($orders, $filter);
-        $searchExpr = $this->getExpressionForColumnSearchs($columnSearchs, $filter);
-        $searchAllExpr = (null !== $globalSearch)
-            ? $this->getExpressionForGlobalSearch($globalSearch, $filter)
-            : null;
+        $orderings     = $this->getOrderings($filter, $orders);
+        $searchExpr    = $this->getExpressionForColumnSearchs($filter, $columnSearchs);
+        $searchAllExpr = $this->getExpressionForGlobalSearch($filter, $globalSearch);
 
         // monta o criteria
         if (null !== $searchAllExpr) $criteria->andWhere($searchAllExpr);

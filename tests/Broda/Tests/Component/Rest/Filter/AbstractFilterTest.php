@@ -122,7 +122,7 @@ class AbstractFilterTest extends \PHPUnit_Framework_TestCase
     {
         return array(
             array(Request::create('/', 'GET', array()), 'Broda\Component\Rest\Filter\NullFilter'),
-            array(Request::create('/', 'GET', array('s'=>'foo search')), 'Broda\Component\Rest\Filter\DefaultFilter'),
+            array(Request::create('/', 'GET', array('s'=>'foo search')), 'Broda\Component\Rest\Filter\BasicFilter'),
             //array(Request::create('/', 'POST', array('draw' => 1)), 'Broda\Component\Rest\Filter\DataTableFilter'),
             //array(Request::create('/', 'POST', array('sEcho' => 1)), 'Broda\Component\Rest\Filter\DataTableLegacyFilter'),
         );

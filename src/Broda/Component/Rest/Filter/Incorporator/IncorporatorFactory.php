@@ -46,7 +46,7 @@ class IncorporatorFactory
      * @param string $incorpClass FQCN do incorporator a ser registrado
      * @throws \UnexpectedValueException
      */
-    public static function addIncorporator($incorpClass)
+    public static function addIncorporatorClass($incorpClass)
     {
         if (!is_subclass_of($incorpClass,
             'Broda\Component\Rest\Filter\Incorporator\IncorporatorInterface')) {

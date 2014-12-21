@@ -117,7 +117,7 @@ class FilterBuilder implements FilterBuilderInterface
                 isset($col['searchable']) ? $col['searchable'] : true
             );
             if (isset($col['subcolumns'])) {
-                foreach ($col['subcolumns'] as $subcol) {
+                foreach ((array)$col['subcolumns'] as $subcol) {
                     $this->addSubColumn(
                         $col['name'],
                         $subcol['name'],

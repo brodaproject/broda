@@ -299,8 +299,8 @@ abstract class AbstractFilter implements FilterInterface
             return new DataTableLegacyFilter($request);
         } elseif (isset($request['dynatable'])
             || (isset($request['page']) && isset($request['perPage']))
-            || (count($request['queries']) || count($request['sorts']))
-        ) {
+            || (isset($request['queries']) || isset($request['sorts']))
+            ) {
             // dynatable
             // defina as defaultColumns se você vai usar a detecção automatica
             // ou senão o search global e os orders não irão funcionar

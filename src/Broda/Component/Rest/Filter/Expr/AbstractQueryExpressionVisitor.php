@@ -8,6 +8,9 @@ use Doctrine\Common\Collections\Expr\CompositeExpression;
 use Doctrine\Common\Collections\Expr\ExpressionVisitor;
 use Doctrine\Common\Collections\Expr\Value;
 
+/**
+ * TODO doc
+ */
 abstract class AbstractQueryExpressionVisitor extends ExpressionVisitor
 {
 

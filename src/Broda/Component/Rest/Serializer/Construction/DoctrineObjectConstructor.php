@@ -2,6 +2,7 @@
 
 namespace Broda\Component\Rest\Serializer\Construction;
 
+use Doctrine\ORM\EntityManager;
 use JMS\Serializer\Construction\ObjectConstructorInterface;
 use JMS\Serializer\DeserializationContext;
 use JMS\Serializer\Metadata\ClassMetadata;
@@ -18,16 +19,18 @@ class DoctrineObjectConstructor implements ObjectConstructorInterface
 
     public function __construct(Container $container, ObjectConstructorInterface $fallbackConstructor)
     {
-        $this->container     = $container;
+        $this->container           = $container;
         $this->fallbackConstructor = $fallbackConstructor;
     }
 
-    public function construct(VisitorInterface $visitor, ClassMetadata $metadata, $data, array $type, DeserializationContext $context)
+    public function construct(VisitorInterface $visitor, ClassMetadata $metadata,
+                              $data, array $type, DeserializationContext $context)
     {
         // Locate possible ObjectManager
         $objectManager = null;
         $ems = $this->container['orm.ems']->keys();
         foreach ($ems as $name) {
+            /* @var $em EntityManager */
             $em = $this->container['orm.ems'][$name];
             if ($em->getMetadataFactory()->isTransient($metadata->name)) {
                 $objectManager = $em;
@@ -45,24 +48,26 @@ class DoctrineObjectConstructor implements ObjectConstructorInterface
             // Single identifier, load proxy
             try {
                 return $objectManager->getReference($metadata->name, $data);
-            } catch (\Doctrine\ORM\Mapping\MappingException $ex) {
-                // Metadata not exists or class not exists in namespace, proceed with normal deserialization
-                return $this->fallbackConstructor->construct($visitor, $metadata, $data, $type, $context);
-            } catch (\Doctrine\Common\Persistence\Mapping\MappingException $ex) {
-                // Metadata not exists or class not exists in namespace, proceed with normal deserialization
-                return $this->fallbackConstructor->construct($visitor, $metadata, $data, $type, $context);
+            } catch (\Exception $e) {
+                if ($e instanceof \Doctrine\ORM\Mapping\MappingException
+                 || $e instanceof \Doctrine\Common\Persistence\Mapping\MappingException) {
+                    // Metadata not exists or class not exists in namespace, proceed with normal deserialization
+                    return $this->fallbackConstructor->construct($visitor, $metadata, $data, $type, $context);
+                }
+                throw $e;
             }
         }
 
         // Fallback to default constructor if missing identifier(s)
         try {
             $classMetadata  = $objectManager->getClassMetadata($metadata->name);
-        } catch (\Doctrine\ORM\Mapping\MappingException $ex) {
-            // Metadata not exists or class not exists in namespace, proceed with normal deserialization
-            return $this->fallbackConstructor->construct($visitor, $metadata, $data, $type, $context);
-        } catch (\Doctrine\Common\Persistence\Mapping\MappingException $ex) {
-            // Metadata not exists or class not exists in namespace, proceed with normal deserialization
-            return $this->fallbackConstructor->construct($visitor, $metadata, $data, $type, $context);
+        } catch (\Exception $e) {
+            if ($e instanceof \Doctrine\ORM\Mapping\MappingException
+                || $e instanceof \Doctrine\Common\Persistence\Mapping\MappingException) {
+                // Metadata not exists or class not exists in namespace, proceed with normal deserialization
+                return $this->fallbackConstructor->construct($visitor, $metadata, $data, $type, $context);
+            }
+            throw $e;
         }
         $identifierList = array();
 
