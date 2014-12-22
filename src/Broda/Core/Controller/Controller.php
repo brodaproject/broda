@@ -30,7 +30,7 @@ abstract class Controller
      *
      * @Inject(Broda\Core\Controller\Injector\AnnotationInjector::CONTAINER)
      */
-    function setContainer(Container $container)
+    public function setContainer(Container $container)
     {
         $this->container = $container;
     }
