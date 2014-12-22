@@ -2,6 +2,7 @@
 
 namespace Broda\Core\Provider\Sensio\FrameworkExtra;
 
+use Broda\Core\Container\RouteProviderInterface;
 use Broda\Core\Container\SubscriberProviderInterface;
 use Pimple\Container;
 use Pimple\ServiceProviderInterface;
@@ -24,23 +25,20 @@ use Symfony\Component\Routing\RouteCollection;
  *
  * @author raphael
  */
-class FrameworkExtraProvider implements ServiceProviderInterface, SubscriberProviderInterface
+class FrameworkExtraProvider implements ServiceProviderInterface, SubscriberProviderInterface, RouteProviderInterface
 {
 
     public function register(Container $c)
     {
 
+        $c['extra.controllers_dir'] = sys_get_temp_dir();
+
         $c['extra.route_loader'] = function ($c) {
             return new AnnotationDirectoryLoader(
-                new FileLocator($c['controllers_dir']),
+                new FileLocator($c['extra.controllers_dir']),
                 new AnnotatedRouteControllerLoader($c['annotation.reader'])
             );
         };
-
-        $c->extend('routes', function (RouteCollection $routes, $c) {
-            $routes->addCollection($c['extra.route_loader']->load('', 'annotation'));
-            return $routes;
-        });
 
         $c['extra.paramconverter.auto_convert'] = true;
         $c['extra.paramconverter.manager'] = function ($c) {
@@ -64,14 +62,14 @@ class FrameworkExtraProvider implements ServiceProviderInterface, SubscriberProv
             return new HttpCacheListener();
         };
 
-        $c['extra.security_expression_language'] = function () {
+        $c['extra.security.expression_language'] = function () {
             return new ExpressionLanguage();
         };
 
         $c['extra.security_listener'] = function ($c) {
             return new SecurityListener(
                 isset($c['security.context']) ? $c['security.context'] : null,
-                $c['extra.security_expression_language'],
+                $c['extra.security.expression_language'],
                 isset($c['security.authentication.trust_resolver'])
                     ? $c['security.authentication.trust_resolver']
                     : null,
@@ -87,5 +85,11 @@ class FrameworkExtraProvider implements ServiceProviderInterface, SubscriberProv
         $dispatcher->addSubscriber($c['extra.httpcache_listener']);
         $dispatcher->addSubscriber($c['extra.security_listener']);
     }
+
+    public function route(Container $c, RouteCollection $routes)
+    {
+        $routes->addCollection($c['extra.route_loader']->load('', 'annotation'));
+    }
+
 
 }
