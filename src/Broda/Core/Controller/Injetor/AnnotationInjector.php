@@ -1,7 +1,8 @@
 <?php
 
-namespace Broda\Core\Controller;
+namespace Broda\Core\Controller\Injector;
 
+use Broda\Core\Controller\Annotations;
 use Doctrine\Common\Annotations\Reader;
 use Pimple\Container;
 use Symfony\Component\PropertyAccess\PropertyAccess;
@@ -14,14 +15,14 @@ use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
  * É usado pelo {@link Broda\Core\ControllerResolver} para injetar
  * dependências automaticamente nos controllers.
  */
-class Injector implements InjectorInterface
+class AnnotationInjector implements InjectorInterface
 {
 
     /**
      * Constante para dizer ao (@)Inject que deve ser injetado o próprio container
      * na classe.
      *
-     * Use dessa forma: (@)Inject(Broda\Core\Controller\Injector::CONTAINER)
+     * Use dessa forma: (@)Inject(Broda\Core\Controller\Injector\Injector::CONTAINER)
      */
     const CONTAINER = 'CONTAINER';
 

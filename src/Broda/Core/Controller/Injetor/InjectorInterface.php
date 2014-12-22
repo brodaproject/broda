@@ -1,6 +1,6 @@
 <?php
 
-namespace Broda\Core\Controller;
+namespace Broda\Core\Controller\Injector;
 
 
 interface InjectorInterface

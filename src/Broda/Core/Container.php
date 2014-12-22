@@ -5,7 +5,7 @@ namespace Broda\Core;
 use Broda\Core\Container\BootableProviderInterface;
 use Broda\Core\Container\RouteProviderInterface;
 use Broda\Core\Container\SubscriberProviderInterface;
-use Broda\Core\Provider\Doctrine\DoctrineSubscriberProviderInterface;
+use Broda\Core\Provider\Doctrine\Container\DoctrineSubscriberProviderInterface;
 use Doctrine\Common\Persistence\ConnectionRegistry;
 use Doctrine\DBAL\Connection;
 use Pimple\Container as BaseContainer;

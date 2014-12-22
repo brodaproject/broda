@@ -1,8 +1,8 @@
 <?php
 
-namespace Broda\Core\Provider;
+namespace Broda\Core\Provider\Doctrine;
 
-use Broda\Core\Provider\Doctrine\OrmRegistry;
+use Broda\Core\Provider\Doctrine\Registry\OrmRegistry;
 use Doctrine\Common\Persistence\Mapping\Driver\MappingDriverChain;
 use Doctrine\Common\Persistence\Mapping\Driver\StaticPHPDriver;
 use Doctrine\DBAL\Connection;
@@ -21,7 +21,7 @@ use Doctrine\ORM\Repository\DefaultRepositoryFactory;
 use Pimple\Container;
 use Pimple\ServiceProviderInterface;
 
-class DoctrineOrmProvider extends DoctrineDbalProvider implements ServiceProviderInterface
+class OrmProvider extends DbalProvider implements ServiceProviderInterface
 {
 
     public function register(Container $c)
@@ -121,6 +121,7 @@ class DoctrineOrmProvider extends DoctrineDbalProvider implements ServiceProvide
                 $config->setQuoteStrategy($c['orm.strategy.quote']);
 
                 $chain = new MappingDriverChain();
+                $config->setMetadataDriverImpl($chain);
 
                 foreach ((array) $options['mappings'] as $entity) {
                     if (!is_array($entity)) {
@@ -166,7 +167,6 @@ class DoctrineOrmProvider extends DoctrineDbalProvider implements ServiceProvide
                     $chain->addDriver($driver, $entity['namespace']);
 
                 }
-                $config->setMetadataDriverImpl($chain);
 
             }
 
@@ -199,6 +199,7 @@ class DoctrineOrmProvider extends DoctrineDbalProvider implements ServiceProvide
 
             return new OrmRegistry(
                 $c,
+                'Doctrine\Common\Persistence\Proxy',
                 array_keys($c['dbal.options']),
                 array_keys($c['orm.options']),
                 $c['dbal.defaultName'],

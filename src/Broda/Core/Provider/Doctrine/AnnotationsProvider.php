@@ -1,6 +1,6 @@
 <?php
 
-namespace Broda\Core\Provider;
+namespace Broda\Core\Provider\Doctrine;
 
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Annotations\AnnotationRegistry;
@@ -9,7 +9,7 @@ use Doctrine\Common\Cache\ArrayCache;
 use Pimple\Container;
 use Pimple\ServiceProviderInterface;
 
-class DoctrineAnnotationsProvider implements ServiceProviderInterface
+class AnnotationsProvider implements ServiceProviderInterface
 {
 
     function __construct($autoload)

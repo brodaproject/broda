@@ -1,8 +1,8 @@
 <?php
 
-namespace Broda\Core\Provider;
+namespace Broda\Core\Provider\Doctrine;
 
-use Broda\Core\Provider\Doctrine\DbalRegistry;
+use Broda\Core\Provider\Doctrine\Registry\DbalRegistry;
 use Doctrine\Common\EventManager;
 use Doctrine\DBAL\Configuration;
 use Doctrine\DBAL\DriverManager;
@@ -10,7 +10,7 @@ use Pimple\Container;
 use Pimple\ServiceProviderInterface;
 use Symfony\Bridge\Doctrine\Logger\DbalLogger;
 
-class DoctrineDbalProvider implements ServiceProviderInterface
+class DbalProvider implements ServiceProviderInterface
 {
 
     public function register(Container $c)

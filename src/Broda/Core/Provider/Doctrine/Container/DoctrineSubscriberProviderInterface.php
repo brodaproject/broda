@@ -1,6 +1,6 @@
 <?php
 
-namespace Broda\Core\Provider\Doctrine;
+namespace Broda\Core\Provider\Doctrine\Container;
 
 
 use Broda\Core\Container;

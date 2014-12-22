@@ -1,6 +1,6 @@
 <?php
 
-namespace Broda\Core\Provider\Doctrine;
+namespace Broda\Core\Provider\Doctrine\Registry;
 
 
 use Doctrine\Common\Persistence\ManagerRegistry;
@@ -17,9 +17,12 @@ class OrmRegistry extends DbalRegistry implements ManagerRegistry
 
     protected $defaultManagerName;
 
-    function __construct(Container $container, array $connectionNames, array $managerNames, $defaultManagerName = null, $defaultConnectionName = null)
+    protected $proxyClass;
+
+    function __construct(Container $container, $proxyClass, array $connectionNames, array $managerNames, $defaultManagerName = null, $defaultConnectionName = null)
     {
         parent::__construct($container, $connectionNames, $defaultConnectionName);
+        $this->proxyClass = $proxyClass;
         $this->managerNames = $managerNames;
         $this->defaultManagerName = !empty($defaultManagerName) ? $defaultManagerName : reset($managerNames);
     }
@@ -148,7 +151,7 @@ class OrmRegistry extends DbalRegistry implements ManagerRegistry
         }
 
         $proxyClass = new \ReflectionClass($class);
-        if ($proxyClass->implementsInterface('Doctrine\Common\Persistence\Proxy')) {
+        if ($proxyClass->implementsInterface($this->proxyClass)) {
             $class = $proxyClass->getParentClass()->getName();
         }
 

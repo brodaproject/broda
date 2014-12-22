@@ -1,6 +1,6 @@
 <?php
 
-namespace Broda\Core\Provider\Doctrine;
+namespace Broda\Core\Provider\Doctrine\Registry;
 
 
 use Doctrine\Common\Persistence\ConnectionRegistry;

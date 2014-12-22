@@ -28,29 +28,11 @@ abstract class Controller
     /**
      * @param Container $container
      *
-     * @Inject(Injector::CONTAINER)
+     * @Inject(Broda\Core\Controller\Injector\AnnotationInjector::CONTAINER)
      */
     function setContainer(Container $container)
     {
         $this->container = $container;
-    }
-
-    /**
-     * Retorna a "tag" do controller, para saber se o usuário
-     * logado tem permissão nele por esta tag.
-     *
-     * Por padrão, é o nome do controller em maiuscula com o prefixo "BRODA_"
-     * Ex: ClientesController -> BRODA_CLIENTESCONTROLLER
-     *
-     * Para entender melhor, veja a classe {@link CMS\Core\Security\User\PermissionMap}.
-     *
-     * @see CMS\Core\Security\User\PermissionMap
-     *
-     * @return string
-     */
-    public function getTag()
-    {
-        return 'BRODA_'.strtoupper(get_class($this));
     }
 
     /**
