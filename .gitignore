@@ -5,6 +5,7 @@
 /vendor/
 /web/
 /var/
+/tests/coverage
 composer.lock
 .buildpath
 .project

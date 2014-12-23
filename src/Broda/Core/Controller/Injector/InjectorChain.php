@@ -1,9 +1,6 @@
 <?php
 
-namespace Broda\Core\Controller\Injetor;
-
-
-use Broda\Core\Controller\Injector\InjectorInterface;
+namespace Broda\Core\Controller\Injector;
 
 class InjectorChain implements InjectorInterface
 {

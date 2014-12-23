@@ -84,7 +84,7 @@ class DbalProvider implements ServiceProviderInterface
             $c['dbal.initialize']();
 
             return new DbalRegistry(
-                $c, array_keys($c['dbal.options']), $c['dbal.defaultName']
+                $c['dbal.conns'], array_keys($c['dbal.options']), $c['dbal.defaultName']
             );
         };
     }

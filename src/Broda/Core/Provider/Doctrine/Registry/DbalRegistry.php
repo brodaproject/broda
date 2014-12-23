@@ -4,6 +4,7 @@ namespace Broda\Core\Provider\Doctrine\Registry;
 
 
 use Doctrine\Common\Persistence\ConnectionRegistry;
+use Doctrine\DBAL\Connection;
 use Pimple\Container;
 
 class DbalRegistry implements ConnectionRegistry
@@ -12,26 +13,31 @@ class DbalRegistry implements ConnectionRegistry
     /**
      * @var Container
      */
-    protected $container;
+    private $dbalContainer;
 
     /**
      * @var string[]
      */
-    protected $connectionNames = array();
+    private $connectionNames = array();
 
-    protected $defaultName;
+    private $defaultName;
 
-    function __construct(Container $container, array $connectionNames, $defaultConnectionName = null)
+    /**
+     * Construtor.
+     *
+     * @param Container $dbalContainer
+     * @param array $connectionNames
+     * @param string $defaultConnectionName
+     */
+    function __construct(Container $dbalContainer, array $connectionNames, $defaultConnectionName = null)
     {
-        $this->container = $container;
+        $this->dbalContainer = $dbalContainer;
         $this->connectionNames = $connectionNames;
         $this->defaultName = !empty($defaultConnectionName) ? $defaultConnectionName : reset($connectionNames);
     }
 
     /**
-     * Gets the default connection name.
-     *
-     * @return string The default connection name.
+     * {@inheritdoc}
      */
     public function getDefaultConnectionName()
     {
@@ -39,35 +45,31 @@ class DbalRegistry implements ConnectionRegistry
     }
 
     /**
-     * Gets the named connection.
+     * {@inheritdoc}
      *
-     * @param string $name The connection name (null for the default one).
-     *
-     * @return object
+     * @return Connection
      */
     public function getConnection($name = null)
     {
-        return $this->container['dbal.conns'][$name ?: $this->defaultName];
+        return $this->dbalContainer[$name ?: $this->defaultName];
     }
 
     /**
-     * Gets an array of all registered connections.
+     * {@inheritdoc}
      *
-     * @return array An array of Connection instances.
+     * @return Connection[]
      */
     public function getConnections()
     {
         $conns = array();
-        foreach ($this->getConnectionNames() as $name) {
+        foreach ($this->connectionNames as $name) {
             $conns[] = $this->getConnection($name);
         }
         return $conns;
     }
 
     /**
-     * Gets all connection names.
-     *
-     * @return array An array of connection names.
+     * {@inheritdoc}
      */
     public function getConnectionNames()
     {

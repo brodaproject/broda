@@ -2,7 +2,6 @@
 
 namespace Broda\Core\Controller\Injector;
 
-
 interface InjectorInterface
 {
     /**

@@ -2,7 +2,6 @@
 
 namespace Broda\Core\Provider\Sensio\FrameworkExtra;
 
-use Broda\Core\Container\RouteProviderInterface;
 use Broda\Core\Container\SubscriberProviderInterface;
 use Pimple\Container;
 use Pimple\ServiceProviderInterface;
@@ -13,34 +12,21 @@ use Sensio\Bundle\FrameworkExtraBundle\EventListener\SecurityListener;
 use Sensio\Bundle\FrameworkExtraBundle\Request\ParamConverter\DateTimeParamConverter;
 use Sensio\Bundle\FrameworkExtraBundle\Request\ParamConverter\DoctrineParamConverter;
 use Sensio\Bundle\FrameworkExtraBundle\Request\ParamConverter\ParamConverterManager;
-use Sensio\Bundle\FrameworkExtraBundle\Routing\AnnotatedRouteControllerLoader;
 use Sensio\Bundle\FrameworkExtraBundle\Security\ExpressionLanguage;
-use Symfony\Component\Config\FileLocator;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-use Symfony\Component\Routing\Loader\AnnotationDirectoryLoader;
-use Symfony\Component\Routing\RouteCollection;
 
 /**
  * Classe FrameworkExtraProvider
  *
  * @author raphael
  */
-class FrameworkExtraProvider implements ServiceProviderInterface, SubscriberProviderInterface, RouteProviderInterface
+class FrameworkExtraProvider implements ServiceProviderInterface, SubscriberProviderInterface
 {
 
     public function register(Container $c)
     {
-
-        $c['extra.controllers_dir'] = sys_get_temp_dir();
-
-        $c['extra.route_loader'] = function ($c) {
-            return new AnnotationDirectoryLoader(
-                new FileLocator($c['extra.controllers_dir']),
-                new AnnotatedRouteControllerLoader($c['annotation.reader'])
-            );
-        };
-
         $c['extra.paramconverter.auto_convert'] = true;
+
         $c['extra.paramconverter.manager'] = function ($c) {
             $converterManager = new ParamConverterManager();
             if (isset($c['doctrine.registry'])) {
@@ -85,11 +71,5 @@ class FrameworkExtraProvider implements ServiceProviderInterface, SubscriberProv
         $dispatcher->addSubscriber($c['extra.httpcache_listener']);
         $dispatcher->addSubscriber($c['extra.security_listener']);
     }
-
-    public function route(Container $c, RouteCollection $routes)
-    {
-        $routes->addCollection($c['extra.route_loader']->load('', 'annotation'));
-    }
-
 
 }

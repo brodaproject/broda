@@ -1,9 +1,7 @@
 <?php
 
-namespace Broda\Core\Controller\Injetor;
+namespace Broda\Core\Controller\Injector;
 
-
-use Broda\Core\Controller\Injector\InjectorInterface;
 use Pimple\Container;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
@@ -64,10 +62,12 @@ class PHPStaticInjector implements InjectorInterface
                 if (0 === strpos($reflMethod->name, 'set')) {
                     $injectablesMethod = $this->getInjectables($reflMethod, $reflMethod->isStatic() ? $reflClass->name : $instance);
 
+                    $args = array();
                     foreach ($injectablesMethod as $injectable) {
-                        $reflMethod->invoke($instance, $this->getService($injectable));
-                        break;
+                        $args[] = $this->getService($injectable);
                     }
+
+                    $reflMethod->invokeArgs($instance, $args);
                 }
             } catch (\InvalidArgumentException $e) {
                 throw new \InvalidArgumentException(
@@ -155,11 +155,11 @@ class PHPStaticInjector implements InjectorInterface
 
         $service = $this->container[$injectable['value']];
 
-        if ($injectable['key']) {
+        if (isset($injectable['key'])) {
             $service = $service[$injectable['key']];
-        } elseif ($injectable['property']) {
+        } elseif (isset($injectable['property'])) {
             $service = $this->propAccessor->getValue($service, $injectable['property']);
-        } elseif ($injectable['method']) {
+        } elseif (isset($injectable['method'])) {
             $service = call_user_func(array($service, $injectable['method']));
         }
 

@@ -5,32 +5,49 @@ namespace Broda\Core\Provider\Doctrine\Registry;
 
 use Doctrine\Common\Persistence\ManagerRegistry;
 use Doctrine\ORM\Configuration;
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityRepository;
 use Pimple\Container;
 
 class OrmRegistry extends DbalRegistry implements ManagerRegistry
 {
 
     /**
+     * @var Container
+     */
+    private $ormContainer;
+
+    /**
      * @var string[]
      */
-    protected $managerNames = array();
+    private $managerNames = array();
 
-    protected $defaultManagerName;
+    private $defaultManagerName;
 
-    protected $proxyClass;
+    private $proxyClass;
 
-    function __construct(Container $container, $proxyClass, array $connectionNames, array $managerNames, $defaultManagerName = null, $defaultConnectionName = null)
+    /**
+     * Construtor.
+     *
+     * @param Container $dbalContainer
+     * @param Container $ormContainer
+     * @param string $proxyClass
+     * @param array $connectionNames
+     * @param array $managerNames
+     * @param string $defaultManagerName
+     * @param string $defaultConnectionName
+     */
+    function __construct(Container $dbalContainer, Container $ormContainer, $proxyClass, array $connectionNames, array $managerNames, $defaultManagerName = null, $defaultConnectionName = null)
     {
-        parent::__construct($container, $connectionNames, $defaultConnectionName);
+        parent::__construct($dbalContainer, $connectionNames, $defaultConnectionName);
+        $this->ormContainer = $ormContainer;
         $this->proxyClass = $proxyClass;
         $this->managerNames = $managerNames;
         $this->defaultManagerName = !empty($defaultManagerName) ? $defaultManagerName : reset($managerNames);
     }
 
     /**
-     * Gets the default object manager name.
-     *
-     * @return string The default object manager name.
+     * {@inheritdoc}
      */
     public function getDefaultManagerName()
     {
@@ -38,47 +55,33 @@ class OrmRegistry extends DbalRegistry implements ManagerRegistry
     }
 
     /**
-     * Gets a named object manager.
+     * {@inheritdoc}
      *
-     * @param string $name The object manager name (null for the default one).
-     *
-     * @return \Doctrine\Common\Persistence\ObjectManager
+     * @return EntityManager
      */
     public function getManager($name = null)
     {
-        return $this->container['orm.ems'][$name ?: $this->defaultManagerName];
+        return $this->ormContainer[$name ?: $this->defaultManagerName];
     }
 
     /**
-     * Gets an array of all registered object managers.
+     * {@inheritdoc}
      *
-     * @return \Doctrine\Common\Persistence\ObjectManager[] An array of ObjectManager instances
+     * @return EntityManager[] An array of ObjectManager instances
      */
     public function getManagers()
     {
         $ems = array();
-        foreach ($this->getManagerNames() as $name) {
+        foreach ($this->managerNames as $name) {
             $ems[] = $this->getManager($name);
         }
         return $ems;
     }
 
     /**
-     * Resets a named object manager.
+     * {@inheritdoc}
      *
-     * This method is useful when an object manager has been closed
-     * because of a rollbacked transaction AND when you think that
-     * it makes sense to get a new one to replace the closed one.
-     *
-     * Be warned that you will get a brand new object manager as
-     * the existing one is not useable anymore. This means that any
-     * other object with a dependency on this object manager will
-     * hold an obsolete reference. You can inject the registry instead
-     * to avoid this problem.
-     *
-     * @param string|null $name The object manager name (null for the default one).
-     *
-     * @return \Doctrine\Common\Persistence\ObjectManager
+     * @return EntityManager
      */
     public function resetManager($name = null)
     {
@@ -87,17 +90,11 @@ class OrmRegistry extends DbalRegistry implements ManagerRegistry
     }
 
     /**
-     * Resolves a registered namespace alias to the full namespace.
-     *
-     * This method looks for the alias in all registered object managers.
-     *
-     * @param string $alias The alias.
-     *
-     * @return string The full namespace.
+     * {@inheritdoc}
      */
     public function getAliasNamespace($alias)
     {
-        foreach ($this->getManagerNames() as $name) {
+        foreach ($this->managerNames as $name) {
             try {
                 $config = $this->getManager($name)->getConfiguration();
 
@@ -113,9 +110,7 @@ class OrmRegistry extends DbalRegistry implements ManagerRegistry
     }
 
     /**
-     * Gets all connection names.
-     *
-     * @return array An array of connection names.
+     * {@inheritdoc}
      */
     public function getManagerNames()
     {
@@ -123,12 +118,9 @@ class OrmRegistry extends DbalRegistry implements ManagerRegistry
     }
 
     /**
-     * Gets the ObjectRepository for an persistent object.
+     * {@inheritdoc}
      *
-     * @param string $persistentObject The name of the persistent object.
-     * @param string $persistentManagerName The object manager name (null for the default one).
-     *
-     * @return \Doctrine\Common\Persistence\ObjectRepository
+     * @return EntityRepository
      */
     public function getRepository($persistentObject, $persistentManagerName = null)
     {
@@ -136,11 +128,9 @@ class OrmRegistry extends DbalRegistry implements ManagerRegistry
     }
 
     /**
-     * Gets the object manager associated with a given class.
+     * {@inheritdoc}
      *
-     * @param string $class A persistent object class name.
-     *
-     * @return \Doctrine\Common\Persistence\ObjectManager|null
+     * @return EntityManager|null
      */
     public function getManagerForClass($class)
     {

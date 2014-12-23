@@ -198,7 +198,8 @@ class OrmProvider extends DbalProvider implements ServiceProviderInterface
             $c['orm.initialize']();
 
             return new OrmRegistry(
-                $c,
+                $c['dbal.conns'],
+                $c['orm.ems'],
                 'Doctrine\Common\Persistence\Proxy',
                 array_keys($c['dbal.options']),
                 array_keys($c['orm.options']),

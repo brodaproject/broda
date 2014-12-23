@@ -89,12 +89,14 @@ class AnnotationInjector implements InjectorInterface
                 if (0 === strpos($reflMethod->name, 'set')) {
                     $injectAnnotsMethods = $this->reader->getMethodAnnotations($reflMethod);
 
+                    $args = array();
                     foreach ($injectAnnotsMethods as $injectAnnot) {
                         if ($injectAnnot instanceof Annotations\Inject) {
-                            $reflMethod->invoke($instance, $this->getService($injectAnnot));
-                            break;
+                            $args[] = $this->getService($injectAnnot);
                         }
                     }
+
+                    $reflMethod->invokeArgs($instance, $args);
                 } else {
                     // Verifica se não foi colocada alguma (@)Inject
                     // em algum outro método senão um setter

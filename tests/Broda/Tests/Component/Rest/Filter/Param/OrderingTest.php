@@ -37,8 +37,8 @@ class OrderingTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException \Exception
-     */
+     * @ expectedException \Exception
+     * /
     public function testSetColumnRequiresAColumn()
     {
         $ord = new Ordering(new Column('foo'));
@@ -46,12 +46,12 @@ class OrderingTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException \Exception
-     */
+     * @ expectedException \Exception
+     * /
     public function testInstantiateRequiresAColumn()
     {
         new Ordering();
-    }
+    }*/
 
     public function testSetDir()
     {

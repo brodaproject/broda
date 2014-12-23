@@ -4,7 +4,7 @@
          backupStaticAttributes="false"
          colors="true"
          convertErrorsToExceptions="true"
-         convertNoticesToExceptions="true"
+         convertNoticesToExceptions="false"
          convertWarningsToExceptions="true"
          processIsolation="false"
          stopOnFailure="false"
@@ -18,8 +18,8 @@
     </testsuites>
 
     <filter>
-        <whitelist>
-            <directory>./src/Broda/</directory>
+        <whitelist processUncoveredFilesFromWhitelist="true">
+            <directory>./src/Broda/Core</directory>
         </whitelist>
     </filter>
 
@@ -28,4 +28,9 @@
             <group>performance</group>
         </exclude>
     </groups>
+
+    <logging>
+        <log type="coverage-clover" target="./tests/coverage/coverage.xml"/>
+        <log type="coverage-php" target="./tests/coverage/coverage.serialized"/>
+    </logging>
 </phpunit>
