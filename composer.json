@@ -28,12 +28,12 @@
 
         "imagine/imagine": "*",
         "doctrine/orm": "~2",
+        "gedmo/doctrine-extensions": "~2.3",
         "monolog/monolog": ">=1.0.0"
     },
     "require-dev": {
         "phpunit/phpunit": "dev-master",
-        "phpunit/php-code-coverage": "3.0.*@dev",
-        "gedmo/doctrine-extensions": "~2.3"
+        "phpunit/php-code-coverage": "3.0.*@dev"
     },
     "autoload": {
         "psr-0": { "Broda\\": "src/" }
