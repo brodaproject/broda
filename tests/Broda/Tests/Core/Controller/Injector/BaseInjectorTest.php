@@ -2,23 +2,39 @@
 
 namespace Broda\Tests\Core\Controller\Injector;
 
-
+use Broda\Tests\TestCase;
 use Pimple\Container;
 
-abstract class BaseInjectorTest extends \PHPUnit_Framework_TestCase
+abstract class BaseInjectorTest extends TestCase
 {
     protected $container;
 
     protected function setUp()
     {
-        $this->container = new Container();
-        $this->container['namespace.service_x'] = new \ArrayObject();
-        $this->container['namespace.service_y'] = new \stdClass();
-        $this->container['service_z_y_x'] = function ($c) {
+        parent::setUp();
+
+        $c = new Container();
+
+        $c['namespace.service_a'] = new \ArrayObject();
+        $c['namespace.service_b'] = function () {
+            return new \stdClass();
+        };
+        // TODO precisa testar factories também?
+        $c['namespace.factory_a'] = $c->factory(function () {
+            return new \ArrayObject();
+        });
+        $c['namespace.factory_b'] = $c->factory(function () {
+            return new \stdClass();
+        });
+
+        $c['service_with_long_name'] = function ($c) {
             $o = new \SplObjectStorage();
-            $o->attach($c['namespace.service_x']);
+            $o->attach($c['namespace.service_a']);
+            $o->attach($c['namespace.service_b']);
             return $o;
         };
+
+        $this->container = $c;
 
     }
 

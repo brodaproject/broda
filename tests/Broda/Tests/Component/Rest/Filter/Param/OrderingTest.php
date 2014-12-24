@@ -3,12 +3,13 @@ namespace Broda\Tests\Component\Rest\Filter\Param;
 
 use Broda\Component\Rest\Filter\Param\Column;
 use Broda\Component\Rest\Filter\Param\Ordering;
+use Broda\Tests\TestCase;
 use Doctrine\Common\Collections\Criteria;
 
 /**
  * @group unit
  */
-class OrderingTest extends \PHPUnit_Framework_TestCase
+class OrderingTest extends TestCase
 {
 
     public function testInstantiate()

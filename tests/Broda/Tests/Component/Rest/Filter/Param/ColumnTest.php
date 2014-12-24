@@ -2,11 +2,12 @@
 namespace Broda\Tests\Component\Rest\Filter\Param;
 
 use Broda\Component\Rest\Filter\Param\Column;
+use Broda\Tests\TestCase;
 
 /**
  * @group unit
  */
-class ColumnTest extends \PHPUnit_Framework_TestCase
+class ColumnTest extends TestCase
 {
 
     public function testInstantiate()

@@ -26,20 +26,20 @@ class Injectable1 {
 class Injectable2 {
     public $params = array();
 
-    function __construct(\ArrayObject $namespace_serviceX) {
-        $this->params[] = $namespace_serviceX;
+    function __construct(\ArrayObject $a) {
+        $this->params[] = $a;
     }
 
-    function setServiceX(\ArrayObject $namespace_serviceX) {
-        $this->params[] = $namespace_serviceX;
+    function setServiceX(\ArrayObject $a) {
+        $this->params[] = $a;
     }
 
     static function injectConstructor() {
-        return array('namespace.service_x');
+        return array('namespace.service_a');
     }
 
     function injectServiceX() {
-        return array('namespace.service_x');
+        return array('namespace.service_a');
     }
 }
 
@@ -57,10 +57,10 @@ class Injectable3 {
     }
 
     static function injectConstructor() {
-        return array('namespace.service_x', 'namespace.service_y');
+        return array('namespace.service_a', 'namespace.service_b');
     }
 
     function injectServices() {
-        return array('namespace.service_x', 'namespace.service_y');
+        return array('namespace.service_a', 'namespace.service_b');
     }
 }

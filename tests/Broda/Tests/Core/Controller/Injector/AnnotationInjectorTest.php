@@ -32,18 +32,18 @@ class AnnotationInjectorTest extends BaseInjectorTest
     {
         $instance = $this->injector->createInstance(__NAMESPACE__.'\Annotation\Injectable2');
 
-        $this->assertSame($this->container['namespace.service_x'], $instance->params[0]);
-        $this->assertSame($this->container['namespace.service_x'], $instance->params[1]);
+        $this->assertSame($this->container['namespace.service_a'], $instance->params[0]);
+        $this->assertSame($this->container['namespace.service_a'], $instance->params[1]);
     }
 
     public function testMultipleServiceInjectionByName()
     {
         $instance = $this->injector->createInstance(__NAMESPACE__.'\Annotation\Injectable3');
 
-        $this->assertSame($this->container['namespace.service_x'], $instance->params[0]);
-        $this->assertSame($this->container['namespace.service_y'], $instance->params[1]);
-        $this->assertSame($this->container['namespace.service_x'], $instance->params[2]);
-        $this->assertSame($this->container['namespace.service_y'], $instance->params[3]);
+        $this->assertSame($this->container['namespace.service_a'], $instance->params[0]);
+        $this->assertSame($this->container['namespace.service_b'], $instance->params[1]);
+        $this->assertSame($this->container['namespace.service_a'], $instance->params[2]);
+        $this->assertSame($this->container['namespace.service_b'], $instance->params[3]);
     }
 
 }

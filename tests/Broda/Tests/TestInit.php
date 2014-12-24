@@ -4,7 +4,7 @@
  */
 namespace Broda\Tests;
 
-error_reporting(E_ALL | E_STRICT);
+error_reporting(E_ALL & ~E_NOTICE | E_STRICT);
 
 // register silently failing autoloader
 spl_autoload_register(function($class) {

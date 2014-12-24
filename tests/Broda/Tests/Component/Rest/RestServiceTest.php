@@ -9,6 +9,7 @@ use Broda\Component\Rest\Filter\NullFilter;
 use Broda\Component\Rest\Filter\TotalizableInterface;
 use Broda\Component\Rest\RestService;
 use Broda\Tests\Component\Rest\Fixtures\SerializableObject;
+use Broda\Tests\TestCase;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\HttpFoundation\Request;
@@ -16,7 +17,7 @@ use Symfony\Component\HttpFoundation\Request;
 /**
  * @ group x
  */
-class RestServiceTest extends \PHPUnit_Framework_TestCase
+class RestServiceTest extends TestCase
 {
 
     /**

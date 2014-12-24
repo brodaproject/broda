@@ -2,11 +2,12 @@
 namespace Broda\Tests\Component\Rest;
 
 use Broda\Component\Rest\RestResponse;
+use Broda\Tests\TestCase;
 
 /**
  * @ group x
  */
-class RestResponseTest extends \PHPUnit_Framework_TestCase
+class RestResponseTest extends TestCase
 {
 
     public function testInstanciateAndGetData()

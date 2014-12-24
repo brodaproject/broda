@@ -42,10 +42,12 @@ class PHPStaticInjector implements InjectorInterface
 
         // Constructor (hard dependency injection)
         try {
-            $injectables = $this->getInjectables($reflMethodConstructor, $reflClass->name);
             $constructorParams  = array();
-            foreach ($injectables as $injectable) {
-                $constructorParams[] = $this->getService($injectable);
+            if ($reflMethodConstructor) {
+                $injectables = $this->getInjectables($reflMethodConstructor, $reflClass->name);
+                foreach ($injectables as $injectable) {
+                    $constructorParams[] = $this->getService($injectable);
+                }
             }
 
         } catch (\InvalidArgumentException $e) {

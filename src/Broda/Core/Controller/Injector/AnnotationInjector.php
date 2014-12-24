@@ -67,11 +67,13 @@ class AnnotationInjector implements InjectorInterface
 
         // Constructor (hard dependency injection)
         try {
-            $injectAnnotsConstr = $this->reader->getMethodAnnotations($reflMethodConstructor);
             $constructorParams  = array();
-            foreach ($injectAnnotsConstr as $injectAnnot) {
-                if ($injectAnnot instanceof Annotations\Inject) {
-                    $constructorParams[] = $this->getService($injectAnnot);
+            if ($reflMethodConstructor) {
+                $injectAnnotsConstr = $this->reader->getMethodAnnotations($reflMethodConstructor);
+                foreach ($injectAnnotsConstr as $injectAnnot) {
+                    if ($injectAnnot instanceof Annotations\Inject) {
+                        $constructorParams[] = $this->getService($injectAnnot);
+                    }
                 }
             }
 

@@ -3,11 +3,12 @@ namespace Broda\Tests\Component\Rest\Filter\Param;
 
 use Broda\Component\Rest\Filter\Param\Searching;
 use Broda\Component\Rest\Filter\Tokenizers\BasicTokenizer;
+use Broda\Tests\TestCase;
 
 /**
  * @group unit
  */
-class SearchingTest extends \PHPUnit_Framework_TestCase
+class SearchingTest extends TestCase
 {
 
     public function testInstantiate()

@@ -3,8 +3,9 @@
 namespace Broda\Tests\Component\Rest\Filter\Tokenizers;
 
 use Broda\Component\Rest\Filter\Tokenizers\TokenizerInterface;
+use Broda\Tests\TestCase;
 
-abstract class BaseTokenizerTest extends \PHPUnit_Framework_TestCase
+abstract class BaseTokenizerTest extends TestCase
 {
 
     /**

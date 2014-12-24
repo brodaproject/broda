@@ -26,14 +26,14 @@ class Injectable2 {
     public $params = array();
 
     /**
-     * @Inject("namespace.service_x")
+     * @Inject("namespace.service_a")
      */
     function __construct(\ArrayObject $x) {
         $this->params[] = $x;
     }
 
     /**
-     * @Inject("namespace.service_x")
+     * @Inject("namespace.service_a")
      */
     function setServiceX(\ArrayObject $x) {
         $this->params[] = $x;
@@ -45,8 +45,8 @@ class Injectable3 {
     public $params = array();
 
     /**
-     * @Inject("namespace.service_x")
-     * @Inject("namespace.service_y")
+     * @Inject("namespace.service_a")
+     * @Inject("namespace.service_b")
      */
     function __construct($service1, $service2) {
         $this->params[] = $service1;
@@ -54,8 +54,8 @@ class Injectable3 {
     }
 
     /**
-     * @Inject("namespace.service_x")
-     * @Inject("namespace.service_y")
+     * @Inject("namespace.service_a")
+     * @Inject("namespace.service_b")
      */
     function setServices($service1, $service2) {
         $this->params[] = $service1;

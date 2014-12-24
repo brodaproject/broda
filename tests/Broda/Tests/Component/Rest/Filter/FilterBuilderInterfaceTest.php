@@ -3,8 +3,9 @@
 namespace Broda\Tests\Component\Rest\Filter;
 
 use Broda\Component\Rest\Filter\FilterBuilderInterface;
+use Broda\Tests\TestCase;
 
-abstract class FilterBuilderInterfaceTest extends \PHPUnit_Framework_TestCase
+abstract class FilterBuilderInterfaceTest extends TestCase
 {
 
     /**

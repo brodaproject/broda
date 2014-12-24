@@ -15,71 +15,184 @@ class TypeHintInjectorTest extends BaseInjectorTest
     protected function setUp()
     {
         parent::setUp();
-        require_once __DIR__.'/TypeHint/stubs.php';
         $this->injector = new TypeHintInjector($this->container);
     }
 
     public function testContainerInjection()
     {
-        $instance = $this->injector->createInstance(__NAMESPACE__.'\TypeHint\Injectable1');
+        eval(<<<PHP
+class TypeHintInjectAHard {
+    public \$inject;
+    function __construct(Pimple\Container \$c) {
+        \$this->inject = \$c;
+    }
+}
+class TypeHintInjectASoft {
+    public \$inject;
+    function setContainer(Pimple\Container \$c) {
+        \$this->inject = \$c;
+    }
+}
+PHP
+        );
 
-        $this->assertSame($this->container, $instance->params[0]);
-        $this->assertSame($this->container, $instance->params[1]);
+        $instance = $this->injector->createInstance('TypeHintInjectAHard');
+        $this->assertSame($this->container, $instance->inject);
+
+        $instance = $this->injector->createInstance('TypeHintInjectASoft');
+        $this->assertSame($this->container, $instance->inject);
     }
 
     public function testServiceInjectionByName()
     {
-        $instance = $this->injector->createInstance(__NAMESPACE__.'\TypeHint\Injectable2');
+        eval(<<<PHP
+class TypeHintInjectBHard {
+    public \$inject;
+    function __construct(ArrayObject \$namespace_serviceA) {
+        \$this->inject = \$namespace_serviceA;
+    }
+}
+class TypeHintInjectBSoft {
+    public \$inject;
+    function setContainer(ArrayObject \$namespace_serviceA) {
+        \$this->inject = \$namespace_serviceA;
+    }
+}
+PHP
+        );
 
-        $this->assertSame($this->container['namespace.service_x'], $instance->params[0]);
-        $this->assertSame($this->container['namespace.service_x'], $instance->params[1]);
+        $instance = $this->injector->createInstance('TypeHintInjectBHard');
+        $this->assertSame($this->container['namespace.service_a'], $instance->inject);
+
+        $instance = $this->injector->createInstance('TypeHintInjectBSoft');
+        $this->assertSame($this->container['namespace.service_a'], $instance->inject);
     }
 
     public function testMultipleServiceInjectionByName()
     {
-        $instance = $this->injector->createInstance(__NAMESPACE__.'\TypeHint\Injectable2Multiple');
+        eval(<<<PHP
+class TypeHintInjectC {
+    public \$injectHard1, \$injectHard2;
+    public \$injectSoft1, \$injectSoft2;
+    function __construct(ArrayObject \$namespace_serviceA, stdClass \$namespace_serviceB) {
+        \$this->injectHard1 = \$namespace_serviceA;
+        \$this->injectHard2 = \$namespace_serviceB;
+    }
+    function setServices(ArrayObject \$namespace_serviceA, stdClass \$namespace_serviceB) {
+        \$this->injectSoft1 = \$namespace_serviceA;
+        \$this->injectSoft2 = \$namespace_serviceB;
+    }
+}
+PHP
+        );
 
-        $this->assertSame($this->container['namespace.service_x'], $instance->params[0]);
-        $this->assertSame($this->container['namespace.service_y'], $instance->params[1]);
-        $this->assertSame($this->container['namespace.service_x'], $instance->params[2]);
-        $this->assertSame($this->container['namespace.service_y'], $instance->params[3]);
+        $instance = $this->injector->createInstance('TypeHintInjectC');
+
+        $this->assertSame($this->container['namespace.service_a'], $instance->injectHard1);
+        $this->assertSame($this->container['namespace.service_b'], $instance->injectHard2);
+        $this->assertSame($this->container['namespace.service_a'], $instance->injectSoft1);
+        $this->assertSame($this->container['namespace.service_b'], $instance->injectSoft2);
+    }
+
+    public function testServiceInjectionByNameWithTypeHintWrong()
+    {
+        eval(<<<PHP
+class TypeHintInjectCWrong {
+    public \$inject;
+    function __construct(stdClass \$namespace_serviceA) {
+        \$this->inject = \$namespace_serviceA;
+    }
+}
+PHP
+        );
+
+        $instance = $this->injector->createInstance('TypeHintInjectCWrong');
+
+        // Aqui mesmo com o nome correto, o typehint está do service_b, ou seja,
+        // por definição ele irá tentar pelo typehint, acabando que encontra este serviço
+        $this->assertNotEquals($this->container['namespace.service_a'], $instance->inject);
+        $this->assertSame($this->container['namespace.service_b'], $instance->inject);
     }
 
     public function testServiceInjectionByTypeHint()
     {
-        $instance = $this->injector->createInstance(__NAMESPACE__.'\TypeHint\Injectable3');
+        eval(<<<PHP
+class TypeHintInjectD {
+    public \$injectHard, \$injectSoft;
+    function __construct(SplObjectStorage \$o) {
+        \$this->injectHard = \$o;
+    }
+    function setService(SplObjectStorage \$o) {
+        \$this->injectSoft = \$o;
+    }
+}
+PHP
+        );
 
-        $this->assertSame($this->container['service_z_y_x'], $instance->params[0]);
-        $this->assertSame($this->container['service_z_y_x'], $instance->params[1]);
+        $instance = $this->injector->createInstance('TypeHintInjectD');
+
+        $this->assertSame($this->container['service_with_long_name'], $instance->injectHard);
+        $this->assertSame($this->container['service_with_long_name'], $instance->injectSoft);
     }
 
     public function testServiceInjectionByUnknownService()
     {
-        $instance = $this->injector->createInstance(__NAMESPACE__.'\TypeHint\Injectable4');
+        eval(<<<PHP
+class TypeHintService {}
+class TypeHintServiceWithDependencies {
+    public \$dep;
+    function setDep(stdClass \$o) { \$this->dep = \$o; }
+}
+class TypeHintInjectE {
+    public \$injectHard, \$injectSoft;
+    function __construct(TypeHintService \$o) {
+        \$this->injectHard = \$o;
+    }
+    function setService(TypeHintServiceWithDependencies \$o) {
+        \$this->injectSoft = \$o;
+    }
+}
+PHP
+        );
 
-        $o1 = new TypeHint\UnknownService();
-        $o2 = new TypeHint\UnknownServiceWithDependencies();
-        $o2->setDep($this->container['namespace.service_y']);
+        $instance = $this->injector->createInstance('TypeHintInjectE');
 
-        $this->assertEquals($o1, $instance->params[0]);
-        $this->assertEquals($o2, $instance->params[1]);
+        $o1 = new \TypeHintService();
+        $o2 = new \TypeHintServiceWithDependencies();
+        $o2->setDep($this->container['namespace.service_b']);
+
+        $this->assertEquals($o1, $instance->injectHard);
+        $this->assertEquals($o2, $instance->injectSoft);
 
         // As instancias de classes criadas pelo proprio injector não são as mesmas,
         // são criadas na hora, ou seja, são instancias diferentes
-        $this->assertNotSame($o1, $instance->params[0]);
-        $this->assertNotSame($o2, $instance->params[1]);
+        $this->assertNotSame($o1, $instance->injectHard);
+        $this->assertNotSame($o2, $instance->injectSoft);
     }
 
     public function testServiceInjectionByTypeHintInterface()
     {
-        $instance = $this->injector->createInstance(__NAMESPACE__.'\TypeHint\Injectable5');
+        eval(<<<PHP
+class TypeHintInjectF {
+    public \$injectHard, \$injectSoft;
+    function __construct(ArrayAccess \$o) {
+        \$this->injectHard = \$o;
+    }
+    function setService(ArrayAccess \$o) {
+        \$this->injectSoft = \$o;
+    }
+}
+PHP
+        );
 
-        $this->assertSame($this->container['namespace.service_x'], $instance->params[0]);
-        $this->assertSame($this->container['namespace.service_x'], $instance->params[1]);
+        $instance = $this->injector->createInstance('TypeHintInjectF');
 
-        // Os dois serviços implementam ArrayAccess, porém como o service_x
-        // foi definido primeiro, será ele que será injetado ao invés do service_z_y_x
-        $this->assertNotSame($this->container['service_z_y_x'], $instance->params[0]);
+        $this->assertSame($this->container['namespace.service_a'], $instance->injectHard);
+        $this->assertSame($this->container['namespace.service_a'], $instance->injectSoft);
+
+        // Os dois serviços implementam ArrayAccess, porém como o service_a
+        // foi definido primeiro, será ele que será injetado ao invés do service_with_long_name
+        $this->assertNotSame($this->container['service_with_long_name'], $instance->injectHard);
     }
 
 }
