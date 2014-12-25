@@ -28,6 +28,7 @@
 
         "imagine/imagine": "*",
         "doctrine/orm": "~2",
+        "symfony/doctrine-bridge": "~2.4",
         "gedmo/doctrine-extensions": "~2.3",
         "monolog/monolog": ">=1.0.0"
     },

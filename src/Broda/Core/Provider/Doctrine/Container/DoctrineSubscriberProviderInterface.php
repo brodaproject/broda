@@ -3,7 +3,7 @@
 namespace Broda\Core\Provider\Doctrine\Container;
 
 
-use Broda\Core\Container;
+use Pimple\Container;
 use Doctrine\Common\EventManager;
 
 interface DoctrineSubscriberProviderInterface {
