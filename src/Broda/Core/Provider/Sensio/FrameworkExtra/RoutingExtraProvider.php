@@ -14,10 +14,11 @@ class RoutingExtraProvider implements ServiceProviderInterface
 
     public function register(Container $c)
     {
-        // TODO dar opção de mudar o loader
+        // TODO dar opção de mudar o loader, não só annotations
         $c['extra.options'] = array(
             'root_dir' => null,
             'controller_namespace' => null,
+            'cache_dir' => sys_get_temp_dir(),
         );
 
         $c['extra.route_loader'] = function ($c) {
@@ -33,14 +34,10 @@ class RoutingExtraProvider implements ServiceProviderInterface
                 $c['extra.route_loader'],
                 $c['extra.options']['controller_namespace'],
                 array(
-                    'cache_dir'             => sys_get_temp_dir(),
+                    'cache_dir'             => $c['extra.options']['cache_dir'],
                     'debug'                 => $c['debug'],
-                    //'generator_class'       => 'Symfony\Component\Routing\Generator\UrlGenerator',
-                    'generator_base_class'  => 'Symfony\Component\Routing\Generator\UrlGenerator',
                     'generator_dumper_class'=> 'Symfony\Component\Routing\Generator\Dumper\PhpGeneratorDumper',
                     'generator_cache_class' => 'BrodaUrlGenerator',
-                    //'matcher_class'         => 'Broda\Core\Provider\Symfony\Routing\RedirectableUrlMatcher',
-                    'matcher_base_class'    => 'Broda\Core\Provider\Symfony\Routing\RedirectableUrlMatcher',
                     'matcher_dumper_class'  => 'Symfony\Component\Routing\Matcher\Dumper\PhpMatcherDumper',
                     'matcher_cache_class'   => 'BrodaRequestMatcher',
                     'resource_type' => 'annotation',
@@ -50,13 +47,21 @@ class RoutingExtraProvider implements ServiceProviderInterface
             return $router;
         };
 
-        $c['routing.url_generator'] = function ($c) {
-            return $c['extra.router'];
-        };
+        $c->extend('routing.url_generator', function ($generator, $c) {
+            /* @var $router Router */
+            $router = $c['extra.router'];
+            $router->setOption('generator_class', get_class($generator));
+            $router->setOption('generator_base_class', get_class($generator));
+            return $router;
+        });
 
-        $c['routing.request_matcher'] = function ($c) {
-            return $c['extra.router'];
-        };
+        $c->extend('routing.request_matcher', function ($matcher, $c) {
+            /* @var $router Router */
+            $router = $c['extra.router'];
+            $router->setOption('matcher_class', get_class($matcher));
+            $router->setOption('matcher_base_class', get_class($matcher));
+            return $router;
+        });
 
     }
 
