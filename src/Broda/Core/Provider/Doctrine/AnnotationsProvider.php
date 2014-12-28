@@ -38,7 +38,7 @@ class AnnotationsProvider implements ServiceProviderInterface
      *
      * @param Container $pimple An Container instance
      */
-    public function register(Container $pimple)
+    public function register(Container $c)
     {
         $c['annotation.reader'] = function ($c) {
             return new CachedReader(new AnnotationReader(), new ArrayCache());

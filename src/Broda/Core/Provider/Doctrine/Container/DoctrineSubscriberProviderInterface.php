@@ -6,8 +6,8 @@ namespace Broda\Core\Provider\Doctrine\Container;
 use Pimple\Container;
 use Doctrine\Common\EventManager;
 
-interface DoctrineSubscriberProviderInterface {
-
+interface DoctrineSubscriberProviderInterface
+{
     /**
      * Registra listeners nas conexões do doctrine, passando o container de serviços
      * e o nome da conexão.

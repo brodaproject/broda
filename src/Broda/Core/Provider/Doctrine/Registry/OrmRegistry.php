@@ -46,6 +46,36 @@ class OrmRegistry extends DbalRegistry implements ManagerRegistry
         $this->defaultManagerName = !empty($defaultManagerName) ? $defaultManagerName : reset($managerNames);
     }
 
+    public function getDefaultConnectionName()
+    {
+        return parent::getDefaultConnectionName() ?: $this->defaultManagerName;
+    }
+
+    public function getConnection($name = null)
+    {
+        try {
+            return parent::getConnection($name);
+        } catch (\Exception $e) {
+            // ignora erro
+        }
+
+        return $this->getManager($name)->getConnection();
+    }
+
+    public function getConnections()
+    {
+        $conns = array();
+        foreach ($this->getConnectionNames() as $name) {
+            $conns[] = $this->getConnection($name);
+        }
+        return $conns;
+    }
+
+    public function getConnectionNames()
+    {
+        return array_unique(array_merge(parent::getConnectionNames(), $this->managerNames));
+    }
+
     /**
      * {@inheritdoc}
      */

@@ -6,6 +6,7 @@ use Broda\Core\Controller\Annotations\Inject;
 use Doctrine\Common\Persistence\ConnectionRegistry;
 use Doctrine\Common\Persistence\ManagerRegistry;
 use Pimple\Container;
+use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
@@ -43,7 +44,7 @@ abstract class Controller
      * Para pegar o objeto de conexão, é só dar um ->getConnection();
      *
      * @param string $connectionName
-     * @return ConnectionRegistry|ManagerRegistry
+     * @return ConnectionRegistry|ManagerRegistry|null
      */
     public function getDoctrine($connectionName = null)
     {
@@ -61,7 +62,7 @@ abstract class Controller
     /**
      * Retorna o usuário que está logado.
      *
-     * @return UserInterface
+     * @return UserInterface|null
      */
     public function getUser()
     {
@@ -70,6 +71,22 @@ abstract class Controller
         }
 
         return $token->getUser();
+    }
+
+    /**
+     * @return Session|null
+     */
+    public function getSession()
+    {
+        return $this->container['session'];
+    }
+
+    /**
+     * @return \Twig_Environment
+     */
+    public function getTwig()
+    {
+        return $this->container['twig'];
     }
 
 } 

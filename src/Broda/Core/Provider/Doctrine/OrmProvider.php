@@ -69,12 +69,12 @@ class OrmProvider extends DbalProvider implements ServiceProviderInterface
                 }
 
                 if (is_string($options['connection'])) {
-                    $options['connection'] = $c['doctrine.registry']->getConnection($options['connection']);
+                    $options['connection'] = $c['dbal.options'][$options['connection']];
                 } elseif (!is_array($options['connection']) && !$options['connection'] instanceof Connection) {
                     throw new \LogicException("Param 'connection' in $name must be a string, array or a Connection instance.");
                 }
             }
-            $container['orm.options'] = $tmp;
+            $c['orm.options'] = $tmp;
 
             $c['orm.defaultName'] = key($c['orm.options']);
         });

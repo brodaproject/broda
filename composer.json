@@ -21,7 +21,8 @@
         "sensio/framework-extra-bundle": "~3.0",
 
         "twig/twig": "~1.15",
-        
+        "symfony/twig-bridge": "~2.4",
+
         "ocramius/proxy-manager": "~0.5",
 
         "jms/serializer": "*",

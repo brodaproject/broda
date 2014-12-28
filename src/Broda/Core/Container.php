@@ -6,6 +6,7 @@ use Broda\Core\Container\BootableProviderInterface;
 use Broda\Core\Container\RouteProviderInterface;
 use Broda\Core\Container\SubscriberProviderInterface;
 use Broda\Core\Provider\Doctrine\Container\DoctrineSubscriberProviderInterface;
+use Broda\Core\Provider\Twig\Container\TwigExtensionableProviderInterface;
 use Doctrine\Common\Persistence\ConnectionRegistry;
 use Doctrine\DBAL\Connection;
 use Pimple\Container as BaseContainer;
@@ -35,6 +36,11 @@ class Container extends BaseContainer
      */
     private $doctrineSubscribeProviders = array();
 
+    /**
+     * @var TwigExtensionableProviderInterface[]
+     */
+    private $twigExtensionsProviders = array();
+
     private $booted = false;
 
     /**
@@ -63,6 +69,10 @@ class Container extends BaseContainer
             $this->doctrineSubscribeProviders[] = $provider;
         }
 
+        if ($provider instanceof TwigExtensionableProviderInterface) {
+            $this->twigExtensionsProviders[] = $provider;
+        }
+
         parent::register($provider, $values);
 
         return $this;
@@ -84,6 +94,7 @@ class Container extends BaseContainer
         $routeProviders = $this->routeProviders;
         $subscribeProviders = $this->subscribeProviders;
         $docSubscribeProviders = $this->doctrineSubscribeProviders;
+        $twigProviders = $this->twigExtensionsProviders;
 
         // Primeiro adiciona rotas e eventos dos providers
         if (isset($this['routes'])) {
@@ -121,6 +132,16 @@ class Container extends BaseContainer
                     }
                 }
                 return $registry;
+            });
+        }
+
+        if (isset($this['twig'])) {
+            $this->extend('twig', function (\Twig_Environment $twig, $c) use (&$twigProviders) {
+                foreach ($twigProviders as $provider) {
+                    /* @var $provider TwigExtensionableProviderInterface */
+                    $provider->twigExtensions($c, $twig);
+                }
+                return $twig;
             });
         }
 
