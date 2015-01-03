@@ -20,6 +20,8 @@ use Doctrine\ORM\Mapping\Driver\YamlDriver;
 use Doctrine\ORM\Repository\DefaultRepositoryFactory;
 use Pimple\Container;
 use Pimple\ServiceProviderInterface;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntityValidator;
+use Symfony\Bridge\Doctrine\Validator\DoctrineInitializer;
 
 class OrmProvider extends DbalProvider implements ServiceProviderInterface
 {
@@ -207,6 +209,17 @@ class OrmProvider extends DbalProvider implements ServiceProviderInterface
                 $c['orm.defaultName']
             );
         });
+
+        // TODO passar pro Container\ValidatorExtensionableProviderInterface
+        if (isset($c['validator.object_initializers'])) {
+            $c->extend('validator.object_initializers', function ($initializers, $c) {
+                $initializers[] = new DoctrineInitializer($c['doctrine.registry']);
+
+                $c['doctrine.orm.validator.unique'] = new UniqueEntityValidator($c['doctrine.registry']);
+
+                return $initializers;
+            });
+        }
     }
 
 } 

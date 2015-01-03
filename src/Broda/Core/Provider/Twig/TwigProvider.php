@@ -10,7 +10,7 @@ use Pimple\ServiceProviderInterface;
  *
  * @author Fabien Potencier <fabien@symfony.com>
  */
-class TwigServiceProvider implements ServiceProviderInterface
+class TwigProvider implements ServiceProviderInterface
 {
     public function register(Container $c)
     {

@@ -3,6 +3,7 @@
 namespace Broda\Core;
 
 use Broda\Core\Container\BootableProviderInterface;
+use Broda\Core\Container\FormExtensionableProviderInterface;
 use Broda\Core\Container\RouteProviderInterface;
 use Broda\Core\Container\SubscriberProviderInterface;
 use Broda\Core\Provider\Doctrine\Container\DoctrineSubscriberProviderInterface;
@@ -12,6 +13,7 @@ use Doctrine\DBAL\Connection;
 use Pimple\Container as BaseContainer;
 use Pimple\ServiceProviderInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\Form\FormFactoryBuilderInterface;
 use Symfony\Component\Routing\RouteCollection;
 
 class Container extends BaseContainer
@@ -40,6 +42,11 @@ class Container extends BaseContainer
      * @var TwigExtensionableProviderInterface[]
      */
     private $twigExtensionsProviders = array();
+
+    /**
+     * @var FormExtensionableProviderInterface[]
+     */
+    private $formExtensionsProviders = array();
 
     private $booted = false;
 
@@ -73,6 +80,10 @@ class Container extends BaseContainer
             $this->twigExtensionsProviders[] = $provider;
         }
 
+        if ($provider instanceof FormExtensionableProviderInterface) {
+            $this->formExtensionsProviders[] = $provider;
+        }
+
         parent::register($provider, $values);
 
         return $this;
@@ -95,6 +106,7 @@ class Container extends BaseContainer
         $subscribeProviders = $this->subscribeProviders;
         $docSubscribeProviders = $this->doctrineSubscribeProviders;
         $twigProviders = $this->twigExtensionsProviders;
+        $formProviders = $this->formExtensionsProviders;
 
         // Primeiro adiciona rotas e eventos dos providers
         if (isset($this['routes'])) {
@@ -142,6 +154,16 @@ class Container extends BaseContainer
                     $provider->twigExtensions($c, $twig);
                 }
                 return $twig;
+            });
+        }
+
+        if (isset($this['form.factory_builder'])) {
+            $this->extend('form.factory_builder', function (FormFactoryBuilderInterface $builder, $c) use (&$formProviders) {
+                foreach ($formProviders as $provider) {
+                    /* @var $provider FormExtensionableProviderInterface */
+                    $provider->formExtensions($c, $builder);
+                }
+                return $builder;
             });
         }
 

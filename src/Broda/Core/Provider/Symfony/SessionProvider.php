@@ -3,6 +3,8 @@
 namespace Broda\Core\Provider\Symfony;
 
 use Broda\Core\Container\SubscriberProviderInterface;
+use Broda\Core\Provider\Symfony\Session\SessionListener;
+use Broda\Core\Provider\Symfony\Session\TestSessionListener;
 use Pimple\Container;
 use Pimple\ServiceProviderInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -22,12 +24,8 @@ use Symfony\Component\HttpKernel\Event\GetResponseEvent;
  */
 class SessionProvider implements ServiceProviderInterface, SubscriberProviderInterface
 {
-    private $c;
-
     public function register(Container $c)
     {
-        $this->c = $c;
-
         $c['session.test'] = false;
 
         $c['session'] = function ($c) {
@@ -57,61 +55,25 @@ class SessionProvider implements ServiceProviderInterface, SubscriberProviderInt
             return new MockFileSessionStorage();
         };
 
+        $c['session.listener'] = function ($c) {
+            return new SessionListener($c);
+        };
+
+        $c['session.listener.test'] = function ($c) {
+            return new TestSessionListener($c);
+        };
+
         $c['session.storage.options'] = array();
         $c['session.default_locale'] = 'en';
         $c['session.storage.save_path'] = null;
     }
 
-    public function onEarlyKernelRequest(GetResponseEvent $event)
-    {
-        $event->getRequest()->setSession($this->c['session']);
-    }
-
-    public function onKernelRequest(GetResponseEvent $event)
-    {
-        if (!$event->isMasterRequest()) {
-            return;
-        }
-
-        // bootstrap the session
-        if (!isset($this->c['session'])) {
-            return;
-        }
-
-        /* @var $session Session */
-        $session = $this->c['session'];
-        $cookies = $event->getRequest()->cookies;
-
-        if ($cookies->has($session->getName())) {
-            $session->setId($cookies->get($session->getName()));
-        } else {
-            $session->migrate(false);
-        }
-    }
-
-    public function onKernelResponse(FilterResponseEvent $event)
-    {
-        if (!$event->isMasterRequest()) {
-            return;
-        }
-
-        $session = $event->getRequest()->getSession();
-        if ($session && $session->isStarted()) {
-            $session->save();
-
-            $params = session_get_cookie_params();
-
-            $event->getResponse()->headers->setCookie(new Cookie($session->getName(), $session->getId(), 0 === $params['lifetime'] ? 0 : time() + $params['lifetime'], $params['path'], $params['domain'], $params['secure'], $params['httponly']));
-        }
-    }
-
     public function subscribe(Container $c, EventDispatcherInterface $dispatcher)
     {
-        $dispatcher->addListener(KernelEvents::REQUEST, array($this, 'onEarlyKernelRequest'), 128);
+        $dispatcher->addSubscriber($c['session.listener']);
 
         if ($c['session.test']) {
-            $dispatcher->addListener(KernelEvents::REQUEST, array($this, 'onKernelRequest'), 192);
-            $dispatcher->addListener(KernelEvents::RESPONSE, array($this, 'onKernelResponse'), -128);
+            $dispatcher->addSubscriber($c['session.listener.test']);
         }
     }
 }

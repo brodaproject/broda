@@ -6,7 +6,13 @@ use Broda\Core\Controller\Annotations\Inject;
 use Doctrine\Common\Persistence\ConnectionRegistry;
 use Doctrine\Common\Persistence\ManagerRegistry;
 use Pimple\Container;
+use Symfony\Component\Form\FormFactory;
+use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Component\Security\Acl\Model\MutableAclProviderInterface;
+use Symfony\Component\Security\Acl\Voter\FieldVote;
+use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
+use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
@@ -48,6 +54,10 @@ abstract class Controller
      */
     public function getDoctrine($connectionName = null)
     {
+        if (!isset($this->container['doctrine.registry'])) {
+            return null;
+        }
+
         if (null === $connectionName) {
             return $this->container['doctrine.registry'];
         }
@@ -66,6 +76,11 @@ abstract class Controller
      */
     public function getUser()
     {
+        if (!isset($this->container['security.context'])) {
+            return null;
+        }
+
+        /* @var $token TokenInterface */
         if (null === $token = $this->container['security.context']->getToken()) {
             return null;
         }
@@ -78,7 +93,9 @@ abstract class Controller
      */
     public function getSession()
     {
-        return $this->container['session'];
+        return isset($this->container['session'])
+            ? $this->container['session']
+            : null;
     }
 
     /**
@@ -86,7 +103,65 @@ abstract class Controller
      */
     public function getTwig()
     {
-        return $this->container['twig'];
+        return isset($this->container['twig'])
+            ? $this->container['twig']
+            : null;
+    }
+
+    /**
+     * @return MutableAclProviderInterface|null
+     */
+    public function getAcl()
+    {
+        return isset($this->container['security.acl_provider'])
+            ? $this->container['security.acl_provider']
+            : null;
+    }
+
+    /**
+     * @return FormFactoryInterface|null
+     */
+    public function getFormFactory()
+    {
+        return isset($this->container['form.factory'])
+            ? $this->container['form.factory']
+            : null;
+    }
+
+    /**
+     * @param string $type
+     * @param null $data
+     * @param array $options
+     * @return null|\Symfony\Component\Form\FormBuilderInterface
+     */
+    public function getFormBuilder($type = 'form', $data = null, array $options = array())
+    {
+        if (null === $this->getFormFactory()) {
+            return null;
+        }
+        return $this->getFormFactory()->createBuilder($type, $data, $options);
+    }
+
+    /**
+     * @param string|string[] $attributes
+     * @param mixed $object
+     * @param string $field
+     * @return bool
+     */
+    public function isGranted($attributes, $object = null, $field = null)
+    {
+        if (!isset($this->container['security.context'])) {
+            return false;
+        }
+
+        /* @var $checker AuthorizationCheckerInterface */
+        $checker = $this->container['security.context'];
+
+        if (null !== $field) {
+            $object = new FieldVote($object, $field);
+        }
+
+        return $checker->isGranted($attributes, $object);
     }
 
 } 
