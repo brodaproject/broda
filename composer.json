@@ -19,6 +19,7 @@
         "symfony/property-access": "~2.5",
         "symfony/expression-language": "~2.5",
         "symfony/form": "~2.5",
+        "symfony/locale": "~2.5",
         "sensio/framework-extra-bundle": "~3.0",
 
         "twig/twig": "~1.15",

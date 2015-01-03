@@ -15,7 +15,8 @@ class DbalProvider implements ServiceProviderInterface
 
     public function register(Container $c)
     {
-        $c['dbal.options'] = array();
+        // FIXME entender pq dá erro essa linha (Fatal error: Uncaught exception 'InvalidArgumentException' with message 'Identifier "default" is not defined.' in ...\Pimple\Container.php on line 95)
+        //$c['dbal.options'] = array();
 
         $c['dbal.initialize'] = $c->protect(function () use ($c) {
             static $initialized = false;
